@@ -65,9 +65,9 @@ service cloud.firestore {
 
     // School main data collections (e.g. data69-school)
     match /schools/{schoolId} {
-      allow read: if isSignedIn();
-      allow create: if isVerifiedUser() && isValidId(schoolId) && isValidSchool(incoming());
-      allow update: if isVerifiedUser() && isValidId(schoolId) && isValidSchool(incoming()) && incoming().id == existing().id;
+      allow read: if true;
+      allow create: if isValidId(schoolId) && isValidSchool(incoming());
+      allow update: if isValidId(schoolId) && isValidSchool(incoming()) && incoming().id == existing().id;
       allow delete: if isAdmin();
     }
 

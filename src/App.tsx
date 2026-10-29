@@ -116,6 +116,7 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [googleAuthReady, setGoogleAuthReady] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const [realtimeStatus, setRealtimeStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
 
   const [isInIframe, setIsInIframe] = useState(() => {
     try {
@@ -127,6 +128,8 @@ export default function App() {
 
   const dataRef = React.useRef<AppData>(data);
   const isRemoteUpdateRef = React.useRef<boolean>(false);
+  const isInitialCloudCheckDoneRef = React.useRef<boolean>(false);
+  const hasPendingUserChangeRef = React.useRef<boolean>(false);
 
   // Initialize Toasts Dismiss timer
   const addToast = (message: string, type: 'success' | 'error') => {
@@ -145,6 +148,103 @@ export default function App() {
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
+
+  // Real-time multi-device synchronization listener for Firestore data69-school
+  useEffect(() => {
+    if (!isFirestoreAvailable()) {
+      setRealtimeStatus('disconnected');
+      return;
+    }
+
+    setRealtimeStatus('connecting');
+
+    const unsubscribe = subscribeToSchoolData(
+      TARGET_FIREBASE_PROJECT,
+      ({ appData, updatedAt, lastUpdatedBy, exists, isFromRemoteDevice }) => {
+        setRealtimeStatus('connected');
+
+        // First snapshot received from Firestore
+        if (!isInitialCloudCheckDoneRef.current) {
+          isInitialCloudCheckDoneRef.current = true;
+          if (exists && appData) {
+            // Hydrate local state from Firestore to prevent empty device overwriting cloud
+            isRemoteUpdateRef.current = true;
+            setData({
+              ...DEFAULT_DATA,
+              ...appData,
+              settings: { ...DEFAULT_DATA.settings, ...(appData.settings || {}) }
+            });
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appData));
+            if (updatedAt) {
+              try {
+                const dateObj = new Date(updatedAt);
+                setLastSyncTime(dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+              } catch (e) {
+                const now = new Date();
+                setLastSyncTime(now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+              }
+            }
+            setTimeout(() => {
+              isRemoteUpdateRef.current = false;
+            }, 300);
+            return;
+          } else {
+            // Firestore document doesn't exist yet on cloud.
+            // If local device has existing classrooms or students, save to initialize the school doc
+            if (dataRef.current.classrooms.length > 0 || dataRef.current.students.length > 0) {
+              saveSchoolDataToFirestore(dataRef.current, TARGET_FIREBASE_PROJECT, googleUser);
+            }
+            return;
+          }
+        }
+
+        if (!appData) return;
+
+        // Prevent infinite loop: only update if remote data differs from local state
+        const currentDataStr = JSON.stringify(dataRef.current);
+        const incomingDataStr = JSON.stringify(appData);
+
+        if (currentDataStr !== incomingDataStr) {
+          isRemoteUpdateRef.current = true;
+          setData({
+            ...DEFAULT_DATA,
+            ...appData,
+            settings: { ...DEFAULT_DATA.settings, ...(appData.settings || {}) }
+          });
+          localStorage.setItem(LOCAL_STORAGE_KEY, incomingDataStr);
+
+          if (updatedAt) {
+            try {
+              const dateObj = new Date(updatedAt);
+              setLastSyncTime(dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+            } catch (e) {
+              const now = new Date();
+              setLastSyncTime(now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+            }
+          }
+
+          // Show feedback if the update came from another connected device
+          if (isFromRemoteDevice) {
+            addToast(`ซิงค์ข้อมูลล่าสุดจากอุปกรณ์อื่นเรียบร้อย (${lastUpdatedBy})`, 'success');
+          }
+
+          setTimeout(() => {
+            isRemoteUpdateRef.current = false;
+          }, 300);
+        }
+      },
+      (error) => {
+        console.warn('Real-time connection error:', error);
+        setRealtimeStatus('disconnected');
+      }
+    );
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   // Initialize Firebase Auth / Restore Session
   useEffect(() => {
@@ -177,19 +277,20 @@ export default function App() {
 
     let firebaseSchoolSyncTimeout: any = null;
 
-    // Only sync if the change didn't originate from a remote Firestore snapshot
-    if (!isRemoteUpdateRef.current) {
-      // Persistent Firebase Firestore Sync for 'data69-school'
+    // Only sync if the change was initiated by the user on this device,
+    // after initial cloud check is completed, and NOT from a remote snapshot
+    if (hasPendingUserChangeRef.current && !isRemoteUpdateRef.current && isInitialCloudCheckDoneRef.current) {
       if (isFirestoreAvailable()) {
         firebaseSchoolSyncTimeout = setTimeout(async () => {
           try {
+            hasPendingUserChangeRef.current = false;
             await saveSchoolDataToFirestore(data, TARGET_FIREBASE_PROJECT, googleUser);
             const now = new Date();
             setLastSyncTime(now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
           } catch (err) {
             console.warn("Firestore data69-school auto-save:", err);
           }
-        }, 800);
+        }, 200);
       }
     }
 
@@ -346,6 +447,7 @@ export default function App() {
 
   // STATE UPDATE HELPERS
   const updateData = (newData: AppData) => {
+    hasPendingUserChangeRef.current = true;
     setData(newData);
   };
 
@@ -680,9 +782,15 @@ export default function App() {
               </svg>
               <span>{isSyncing ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Gmail (Google Account)'}</span>
             </button>
-            <div className="flex items-center justify-center gap-1.5 text-[10px] text-amber-700 font-semibold bg-amber-50/80 border border-amber-200/60 py-1.5 px-3 rounded-xl">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              <span>เชื่อมต่อฐานข้อมูลคลาวด์: <strong>{TARGET_FIREBASE_PROJECT}</strong></span>
+            <div className={`flex items-center justify-center gap-1.5 text-[10px] font-semibold py-1.5 px-3 rounded-xl border transition-all ${
+              realtimeStatus === 'connected'
+                ? 'text-emerald-700 bg-emerald-50/90 border-emerald-200/70'
+                : 'text-amber-700 bg-amber-50/80 border-amber-200/60'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${
+                realtimeStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-ping'
+              }`}></span>
+              <span>{realtimeStatus === 'connected' ? 'เชื่อมต่อฐานข้อมูล Real-time:' : 'เชื่อมต่อฐานข้อมูล:'} <strong>{TARGET_FIREBASE_PROJECT}</strong></span>
             </div>
           </div>
 
@@ -757,20 +865,35 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-3">
-            {/* Firebase data69-school cloud indicator */}
-            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-amber-800 bg-amber-50/90 px-2.5 py-1.5 rounded-xl border border-amber-200/60 font-semibold select-none shadow-3xs" title="เชื่อมต่อฐานข้อมูล Firebase Firestore โปรเจกต์ data69-school">
-              <span className={`w-2 h-2 rounded-full bg-amber-500 ${isSyncing ? 'animate-ping' : 'animate-pulse'}`}></span>
+            {/* Real-time Firebase data69-school cloud indicator */}
+            <div 
+              className={`flex items-center gap-1.5 text-[10px] sm:text-[11px] px-2.5 py-1.5 rounded-xl border font-semibold select-none shadow-3xs transition-all ${
+                realtimeStatus === 'connected'
+                  ? 'text-emerald-800 bg-emerald-50/90 border-emerald-200/80'
+                  : realtimeStatus === 'connecting'
+                  ? 'text-amber-800 bg-amber-50/90 border-amber-200/80'
+                  : 'text-slate-600 bg-slate-50 border-slate-200'
+              }`}
+              title={`เชื่อมต่อฐานข้อมูล Firebase Firestore (${TARGET_FIREBASE_PROJECT}) แบบ Real-time สองทาง`}
+            >
+              <span className={`w-2 h-2 rounded-full ${
+                realtimeStatus === 'connected'
+                  ? 'bg-emerald-500 animate-pulse'
+                  : realtimeStatus === 'connecting'
+                  ? 'bg-amber-500 animate-ping'
+                  : 'bg-slate-400'
+              }`}></span>
               <span>
-                Firebase: <strong>{TARGET_FIREBASE_PROJECT}</strong>
+                {realtimeStatus === 'connected' ? 'Real-time:' : 'Firebase:'} <strong>{TARGET_FIREBASE_PROJECT}</strong>
                 {lastSyncTime && (
-                  <span className="hidden md:inline font-mono text-[9px] text-amber-600 ml-1">({lastSyncTime})</span>
+                  <span className="hidden md:inline font-mono text-[9px] opacity-80 ml-1">({lastSyncTime})</span>
                 )}
               </span>
               <button
                 type="button"
                 onClick={handleSaveToFirebase}
                 disabled={isSyncing}
-                className="ml-1 p-1 hover:bg-amber-100 rounded-lg text-amber-700 transition-colors cursor-pointer"
+                className="ml-1 p-1 hover:bg-black/5 rounded-lg transition-colors cursor-pointer"
                 title="บันทึกข้อมูลด่วนลง Firebase"
               >
                 <Upload className="w-3 h-3" />
@@ -779,7 +902,7 @@ export default function App() {
                 type="button"
                 onClick={handlePullFromFirebase}
                 disabled={isSyncing}
-                className="p-1 hover:bg-amber-100 rounded-lg text-amber-700 transition-colors cursor-pointer"
+                className="p-1 hover:bg-black/5 rounded-lg transition-colors cursor-pointer"
                 title="ดึงข้อมูลล่าสุดจาก Firebase"
               >
                 <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -985,6 +1108,8 @@ export default function App() {
             onSaveToFirebase={handleSaveToFirebase}
             onPullFromFirebase={handlePullFromFirebase}
             firebaseProjectName={TARGET_FIREBASE_PROJECT}
+            realtimeStatus={realtimeStatus}
+            lastSyncTime={lastSyncTime}
             onUpdateSettings={handleUpdateSettings}
             onImportData={handleImportData}
             onDeleteAllStudents={handleDeleteAllStudents}

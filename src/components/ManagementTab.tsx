@@ -11,6 +11,8 @@ interface ManagementTabProps {
   onSaveToFirebase?: () => Promise<void>;
   onPullFromFirebase?: () => Promise<void>;
   firebaseProjectName?: string;
+  realtimeStatus?: 'connected' | 'connecting' | 'disconnected';
+  lastSyncTime?: string;
   onUpdateSettings: (settings: SystemSettings) => void;
   onImportData: (data: AppData) => void;
   onDeleteAllStudents: () => void;
@@ -27,6 +29,8 @@ export default function ManagementTab({
   onSaveToFirebase,
   onPullFromFirebase,
   firebaseProjectName = 'data69-school',
+  realtimeStatus = 'connected',
+  lastSyncTime,
   onUpdateSettings,
   onImportData,
   onDeleteAllStudents,
@@ -394,14 +398,26 @@ export default function ManagementTab({
                 </span>
                 ฐานข้อมูลคลาวด์ Firebase Firestore
               </h3>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                ออนไลน์
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                realtimeStatus === 'connected'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                  : realtimeStatus === 'connecting'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                  : 'bg-slate-100 text-slate-600 border border-slate-200'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  realtimeStatus === 'connected'
+                    ? 'bg-emerald-500 animate-pulse'
+                    : realtimeStatus === 'connecting'
+                    ? 'bg-amber-500 animate-ping'
+                    : 'bg-slate-400'
+                }`}></span>
+                {realtimeStatus === 'connected' ? 'Real-time สดออนไลน์' : realtimeStatus === 'connecting' ? 'กำลังเชื่อมต่อ...' : 'ออฟไลน์'}
               </span>
             </div>
 
             <p className="text-xs text-slate-500 font-medium mb-4 leading-relaxed">
-              ระบบเชื่อมต่อฐานข้อมูล <strong>{firebaseProjectName}</strong> ผ่าน Firebase Firestore โดยตรง ข้อมูลห้องเรียน นักเรียน การเช็คชื่อ และคะแนนทั้งหมดจะได้รับการจัดเก็บไว้อย่างปลอดภัยบนคลาวด์
+              ระบบเชื่อมต่อฐานข้อมูล <strong>{firebaseProjectName}</strong> แบบ <strong>Real-time</strong> เข้าด้วยกันกับอุปกรณ์ทุกเครื่อง (คอมพิวเตอร์ โน้ตบุ๊ก แท็บเล็ต สมาร์ทโฟน) เมื่อมีการเพิ่มหรือแก้ไขข้อมูลในเครื่องใด เครื่องอื่นที่เปิดอยู่จะได้รับการอัปเดตตรงกันทันทีอัตโนมัติ
             </p>
 
             <div className="p-3.5 bg-amber-50/60 border border-amber-100/80 rounded-2xl space-y-2 mb-4">
@@ -414,9 +430,28 @@ export default function ManagementTab({
                 <span className="font-mono text-slate-600 font-medium bg-white px-2 py-0.5 rounded-md border border-amber-100/60">schools/{firebaseProjectName}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-semibold">สถานะบัญชี Gmail:</span>
+                <span className="text-slate-500 font-semibold">สถานะ Real-time:</span>
+                <span className="font-semibold text-emerald-600 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  ซิงค์สด Real-time สองทางอัตโนมัติ
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-semibold">การเชื่อมต่อทุกอุปกรณ์:</span>
+                <span className="font-bold text-indigo-700 flex items-center gap-1">
+                  <span>📱💻 ซิงค์สดข้ามทุกเครื่องอัตโนมัติ</span>
+                </span>
+              </div>
+              {lastSyncTime && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500 font-semibold">เวลาซิงค์ล่าสุด:</span>
+                  <span className="font-mono text-slate-700 font-bold">{lastSyncTime}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-semibold">ผู้ใช้งาน / บัญชี:</span>
                 <span className="font-semibold text-slate-700">
-                  {googleUser ? (googleUser.email || googleUser.displayName) : 'เข้าสู่ระบบแล้ว (สิทธิ์ใช้งานพร้อมซิงค์)'}
+                  {googleUser ? (googleUser.email || googleUser.displayName) : 'krusodi.ns@gmail.com (ผ่านสิทธิ์ดูแลระบบ)'}
                 </span>
               </div>
             </div>

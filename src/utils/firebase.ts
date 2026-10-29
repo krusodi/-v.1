@@ -249,18 +249,21 @@ export const saveSchoolDataToFirestore = async (
   const path = `schools/${schoolId}`;
   try {
     const schoolRef = doc(db, 'schools', schoolId);
+    // Sanitize appData to guarantee no undefined values cause Firestore serialization errors
+    const cleanAppData = JSON.parse(JSON.stringify(appData));
     await setDoc(schoolRef, {
       id: schoolId,
-      schoolName: appData.settings?.schoolName || 'data69-school',
-      appData,
+      schoolName: cleanAppData.settings?.schoolName || 'data69-school',
+      appData: cleanAppData,
       updatedAt: new Date().toISOString(),
-      lastUpdatedBy: user?.displayName || user?.email || 'Teacher',
+      lastUpdatedBy: user?.displayName || user?.email || 'อุปกรณ์ผู้ใช้งาน (Multi-Device)',
       ownerEmail: user?.email || '',
       ownerUid: user?.uid || ''
     }, { merge: true });
     return true;
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn(`Firestore save error on ${path}:`, error);
+    return false;
   }
 };
 
@@ -285,16 +288,25 @@ export const getSchoolDataFromFirestore = async (
     }
     return null;
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
+    console.warn(`Firestore get error on ${path}:`, error);
+    return null;
   }
 };
 
 /**
  * Real-time subscription to school data changes in Firestore /schools/data69-school
+ * Supports multi-device live updates and pending write detection
  */
 export const subscribeToSchoolData = (
   schoolId: string = DEFAULT_SCHOOL_DOC_ID,
-  onUpdate: (payload: { appData: any; updatedAt: string; lastUpdatedBy: string }) => void
+  onUpdate: (payload: { 
+    appData: any; 
+    updatedAt: string; 
+    lastUpdatedBy: string; 
+    exists: boolean;
+    isFromRemoteDevice: boolean;
+  }) => void,
+  onError?: (error: any) => void
 ) => {
   if (!db) return () => {};
   const path = `schools/${schoolId}`;
@@ -302,19 +314,35 @@ export const subscribeToSchoolData = (
   return onSnapshot(
     schoolRef,
     (snap) => {
+      // If hasPendingWrites is true, the snapshot is from the local client's uncommitted write
+      const isFromRemoteDevice = !snap.metadata.hasPendingWrites;
       if (snap.exists()) {
         const data = snap.data();
-        if (data.appData) {
+        if (data && data.appData) {
           onUpdate({
             appData: data.appData,
             updatedAt: data.updatedAt || '',
-            lastUpdatedBy: data.lastUpdatedBy || 'Cloud'
+            lastUpdatedBy: data.lastUpdatedBy || 'Cloud',
+            exists: true,
+            isFromRemoteDevice
           });
+          return;
         }
       }
+      onUpdate({
+        appData: null,
+        updatedAt: '',
+        lastUpdatedBy: '',
+        exists: false,
+        isFromRemoteDevice: false
+      });
     },
     (error) => {
-      handleFirestoreError(error, OperationType.GET, path);
+      console.warn(`Firestore real-time subscription (${path}) warning:`, error);
+      if (onError) {
+        onError(error);
+      }
     }
   );
 };
+
