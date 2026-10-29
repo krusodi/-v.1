@@ -1,0 +1,112 @@
+{
+  "entities": {
+    "SchoolData": {
+      "title": "SchoolData",
+      "description": "School wide classroom, attendance, and student grade records",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identifier of the school document, matching school ID e.g. data69-school",
+          "maxLength": 100
+        },
+        "schoolName": {
+          "type": "string",
+          "description": "Name of the school institution",
+          "maxLength": 200
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of the last modification",
+          "maxLength": 50
+        },
+        "lastUpdatedBy": {
+          "type": "string",
+          "description": "Display name or email of the updater",
+          "maxLength": 100
+        },
+        "ownerEmail": {
+          "type": "string",
+          "description": "Email of the school administrator or teacher",
+          "maxLength": 150
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the record owner",
+          "maxLength": 128
+        },
+        "appData": {
+          "type": "object",
+          "description": "JSON object containing classrooms, students, attendance, and grading details"
+        }
+      },
+      "required": ["id", "updatedAt", "appData"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile for teachers and administrators",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth user ID",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 150
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 150
+        },
+        "role": {
+          "type": "string",
+          "description": "Assigned user role in the school system",
+          "enum": ["ADMIN", "USER"],
+          "maxLength": 20
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "description": "ISO timestamp of the last login",
+          "maxLength": 50
+        }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "TestConnection": {
+      "title": "TestConnection",
+      "description": "Health check document for Firestore connectivity test",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Health status string",
+          "maxLength": 20
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of probe check",
+          "maxLength": 50
+        }
+      },
+      "required": ["status"]
+    }
+  },
+  "firestore": {
+    "/schools/{schoolId}": {
+      "schema": "SchoolData",
+      "description": "Stores school and classroom data for data69-school and other school profiles"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores authenticated user profiles and permissions"
+    },
+    "/test/{testId}": {
+      "schema": "TestConnection",
+      "description": "Used for verifying Firestore connectivity on boot"
+    }
+  }
+}

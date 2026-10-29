@@ -1,0 +1,6 @@
+{
+  "name": "Classroom Attendance and Grading System",
+  "description": "ระบบบริหารจัดการชั้นเรียน เช็คชื่อ บันทึกคะแนน ออกรายงานพิมพ์ A4 และเชื่อมต่อฐานข้อมูลคลาวด์ Firebase (data69-school)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
