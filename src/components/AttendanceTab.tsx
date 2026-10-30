@@ -294,7 +294,7 @@ export default function AttendanceTab({
                       const currentStatus = attendanceMap[std.id];
                       return (
                         <tr key={std.id} className="hover:bg-slate-50/30 transition-colors">
-                          <td className="py-4 px-4 font-bold text-slate-500">เลขที่ {std.no}</td>
+                          <td className="py-4 px-4 font-bold text-slate-600 font-mono">{std.no}</td>
                           <td className="py-4 px-4 font-semibold text-slate-800">{std.fullName}</td>
                           <td className="py-4 px-4">
                             <div className="flex items-center justify-center gap-1 sm:gap-1.5">

@@ -389,7 +389,7 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
                 >
                   {classStudents.map(s => (
                     <option key={s.id} value={s.id}>
-                      เลขที่ {s.no} - {s.fullName}
+                      {s.no}. {s.fullName}
                     </option>
                   ))}
                 </select>
@@ -466,33 +466,33 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
                     <table className="w-full text-left border-collapse font-sans text-xs">
                       <thead>
                         <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-800">
-                          <th className="py-2 px-2.5 border-r border-slate-800 text-center w-12">เลขที่</th>
-                          <th className="py-2 px-3 border-r border-slate-800 min-w-[120px]">ชื่อ-นามสกุล</th>
+                          <th className="py-2.5 px-2 border-r border-slate-800 text-center w-14 sm:w-16 min-w-[50px] whitespace-nowrap">เลขที่</th>
+                          <th className="py-2.5 px-3 border-r border-slate-800 min-w-[170px] sm:min-w-[200px] whitespace-nowrap">ชื่อ-นามสกุล</th>
                           {classAssignments.map(asg => (
-                            <th key={asg.id} className="py-2 px-1.5 border-r border-slate-800 text-center">
+                            <th key={asg.id} className="py-2 px-2 border-r border-slate-800 text-center min-w-[64px] whitespace-nowrap">
                               <div className="line-clamp-1" title={asg.name}>{asg.name}</div>
-                              <div className="text-[9px] font-normal font-mono text-slate-500">({asg.maxScore})</div>
+                              <div className="text-[10px] font-normal font-mono text-slate-500">({asg.maxScore})</div>
                             </th>
                           ))}
-                          <th className="py-2 px-2 border-r border-slate-800 text-center font-bold w-16">รวม ({totalMaxScore})</th>
-                          <th className="py-2 px-2 border-r border-slate-800 text-center font-bold w-12">%</th>
-                          <th className="py-2 px-2 text-center font-bold w-16">เกรด</th>
+                          <th className="py-2.5 px-3 border-r border-slate-800 text-center font-bold w-24 min-w-[80px] whitespace-nowrap">รวม ({totalMaxScore})</th>
+                          <th className="py-2.5 px-2 border-r border-slate-800 text-center font-bold w-14 min-w-[52px] whitespace-nowrap">%</th>
+                          <th className="py-2.5 px-3 text-center font-bold w-24 min-w-[84px] whitespace-nowrap">เกรด</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-400">
                         {scoresReportData.map((row, idx) => (
                           <tr key={row.student.id} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`}>
-                            <td className="py-2 px-1.5 border-r border-slate-300 text-center font-semibold font-mono">{row.student.no}</td>
-                            <td className="py-2 px-3 border-r border-slate-300 font-semibold text-slate-900">{row.student.fullName}</td>
+                            <td className="py-2 px-2 border-r border-slate-300 text-center font-bold font-mono text-slate-700 whitespace-nowrap">{row.student.no}</td>
+                            <td className="py-2 px-3 border-r border-slate-300 font-semibold text-slate-900 whitespace-nowrap">{row.student.fullName}</td>
                             {classAssignments.map(asg => (
-                              <td key={asg.id} className="py-2 px-1.5 border-r border-slate-300 text-center font-mono">
+                              <td key={asg.id} className="py-2 px-2 border-r border-slate-300 text-center font-mono whitespace-nowrap">
                                 {row.scores[asg.id] !== undefined ? row.scores[asg.id] : 0}
                               </td>
                             ))}
-                            <td className="py-2 px-2 border-r border-slate-300 text-center font-bold font-mono">{row.total}</td>
-                            <td className="py-2 px-2 border-r border-slate-300 text-center font-semibold font-mono">{row.percentage}%</td>
-                            <td className="py-2 px-2 text-center">
-                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${row.gradeColor}`}>
+                            <td className="py-2 px-3 border-r border-slate-300 text-center font-bold font-mono text-slate-800 whitespace-nowrap">{row.total}</td>
+                            <td className="py-2 px-2 border-r border-slate-300 text-center font-semibold font-mono whitespace-nowrap">{row.percentage}%</td>
+                            <td className="py-2 px-2.5 text-center whitespace-nowrap">
+                              <span className={`inline-flex items-center justify-center min-w-[64px] px-2.5 py-0.5 rounded-md text-[11px] font-bold border whitespace-nowrap ${row.gradeColor}`}>
                                 {row.grade}
                               </span>
                             </td>
@@ -511,29 +511,29 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
                 <table className="w-full text-left border-collapse text-xs font-sans">
                   <thead>
                     <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-800">
-                      <th className="py-2 px-3 border-r border-slate-800 text-center w-12">เลขที่</th>
-                      <th className="py-2 px-4 border-r border-slate-800 min-w-[150px]">ชื่อ-นามสกุล</th>
-                      <th className="py-2 px-2 border-r border-slate-800 text-center text-emerald-800 bg-emerald-50/50 w-16">มา (✓)</th>
-                      <th className="py-2 px-2 border-r border-slate-800 text-center text-amber-800 bg-amber-50/50 w-16">สาย (ส)</th>
-                      <th className="py-2 px-2 border-r border-slate-800 text-center text-blue-800 bg-blue-50/50 w-16">ลา (ล)</th>
-                      <th className="py-2 px-2 border-r border-slate-800 text-center text-indigo-800 bg-indigo-50/50 w-16">ป่วย (🤒)</th>
-                      <th className="py-2 px-2 border-r border-slate-800 text-center text-rose-800 bg-rose-50/50 w-16">ขาด (✕)</th>
-                      <th className="py-2 px-2 border-r border-slate-800 text-center font-bold w-16">รวมเช็ค</th>
-                      <th className="py-2 px-3 text-center font-bold bg-indigo-50 text-indigo-800 w-20">% มาเรียน</th>
+                      <th className="py-2.5 px-2 border-r border-slate-800 text-center w-14 sm:w-16 min-w-[50px] whitespace-nowrap">เลขที่</th>
+                      <th className="py-2.5 px-3 border-r border-slate-800 min-w-[170px] sm:min-w-[200px] whitespace-nowrap">ชื่อ-นามสกุล</th>
+                      <th className="py-2 px-2 border-r border-slate-800 text-center text-emerald-800 bg-emerald-50/50 w-16 min-w-[56px] whitespace-nowrap">มา (✓)</th>
+                      <th className="py-2 px-2 border-r border-slate-800 text-center text-amber-800 bg-amber-50/50 w-16 min-w-[56px] whitespace-nowrap">สาย (ส)</th>
+                      <th className="py-2 px-2 border-r border-slate-800 text-center text-blue-800 bg-blue-50/50 w-16 min-w-[56px] whitespace-nowrap">ลา (ล)</th>
+                      <th className="py-2 px-2 border-r border-slate-800 text-center text-indigo-800 bg-indigo-50/50 w-16 min-w-[56px] whitespace-nowrap">ป่วย (🤒)</th>
+                      <th className="py-2 px-2 border-r border-slate-800 text-center text-rose-800 bg-rose-50/50 w-16 min-w-[56px] whitespace-nowrap">ขาด (✕)</th>
+                      <th className="py-2 px-2 border-r border-slate-800 text-center font-bold w-16 min-w-[56px] whitespace-nowrap">รวมเช็ค</th>
+                      <th className="py-2 px-3 text-center font-bold bg-indigo-50 text-indigo-800 w-24 min-w-[76px] whitespace-nowrap">% มาเรียน</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-400">
                     {attendanceReportData.map((row, idx) => (
                       <tr key={row.student.id} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`}>
-                        <td className="py-2.5 px-2.5 border-r border-slate-300 text-center font-bold font-mono text-slate-500">{row.student.no}</td>
-                        <td className="py-2.5 px-4 border-r border-slate-300 font-semibold text-slate-900">{row.student.fullName}</td>
-                        <td className="py-2.5 px-2 border-r border-slate-300 text-center font-mono font-bold text-emerald-600">{row.present}</td>
-                        <td className="py-2.5 px-2 border-r border-slate-300 text-center font-mono font-bold text-amber-600">{row.late}</td>
-                        <td className="py-2.5 px-2 border-r border-slate-300 text-center font-mono font-bold text-blue-600">{row.leave}</td>
-                        <td className="py-2.5 px-2 border-r border-slate-300 text-center font-mono font-bold text-indigo-600">{row.sick}</td>
-                        <td className="py-2.5 px-2 border-r border-slate-300 text-center font-mono font-bold text-rose-600">{row.absent}</td>
-                        <td className="py-2.5 px-2 border-r border-slate-300 text-center font-mono text-slate-500 font-semibold">{row.total}</td>
-                        <td className="py-2.5 px-3 text-center font-bold font-mono text-indigo-700 bg-indigo-50/20">{row.percentage}%</td>
+                        <td className="py-2 px-2 border-r border-slate-300 text-center font-bold font-mono text-slate-700 whitespace-nowrap">{row.student.no}</td>
+                        <td className="py-2 px-3 border-r border-slate-300 font-semibold text-slate-900 whitespace-nowrap">{row.student.fullName}</td>
+                        <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-emerald-600 whitespace-nowrap">{row.present}</td>
+                        <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-amber-600 whitespace-nowrap">{row.late}</td>
+                        <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-blue-600 whitespace-nowrap">{row.leave}</td>
+                        <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-indigo-600 whitespace-nowrap">{row.sick}</td>
+                        <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-rose-600 whitespace-nowrap">{row.absent}</td>
+                        <td className="py-2 px-2 border-r border-slate-300 text-center font-mono text-slate-600 font-semibold whitespace-nowrap">{row.total}</td>
+                        <td className="py-2 px-3 text-center font-bold font-mono text-indigo-700 bg-indigo-50/20 whitespace-nowrap">{row.percentage}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -553,20 +553,20 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
                     <table className="w-full text-left border-collapse text-xs font-sans">
                       <thead>
                         <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-800">
-                          <th className="py-2 px-3 border-r border-slate-800 text-center w-12">เลขที่</th>
-                          <th className="py-2 px-4 border-r border-slate-800 min-w-[150px]">ชื่อ-นามสกุล</th>
-                          <th className="py-2 px-4 border-r border-slate-800 text-center w-36">วันที่บันทึก</th>
-                          <th className="py-2 px-4 text-center w-32">สถานะ</th>
+                          <th className="py-2.5 px-2 border-r border-slate-800 text-center w-14 sm:w-16 min-w-[50px] whitespace-nowrap">เลขที่</th>
+                          <th className="py-2.5 px-3 border-r border-slate-800 min-w-[170px] sm:min-w-[200px] whitespace-nowrap">ชื่อ-นามสกุล</th>
+                          <th className="py-2.5 px-3 border-r border-slate-800 text-center w-36 min-w-[120px] whitespace-nowrap">วันที่บันทึก</th>
+                          <th className="py-2.5 px-3 text-center w-28 min-w-[90px] whitespace-nowrap">สถานะ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-400">
                         {absencesLeavesData.map((row, idx) => (
                           <tr key={`${row.student.id}-${row.date}`} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                            <td className="py-2.5 px-2.5 border-r border-slate-300 text-center font-bold font-mono text-slate-500">{row.student.no}</td>
-                            <td className="py-2.5 px-4 border-r border-slate-300 font-semibold text-slate-900">{row.student.fullName}</td>
-                            <td className="py-2.5 px-4 border-r border-slate-300 text-center font-semibold font-mono text-slate-600">{row.date}</td>
-                            <td className="py-2.5 px-4 text-center">
-                              <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold border ${row.statusColor}`}>
+                            <td className="py-2 px-2 border-r border-slate-300 text-center font-bold font-mono text-slate-700 whitespace-nowrap">{row.student.no}</td>
+                            <td className="py-2 px-3 border-r border-slate-300 font-semibold text-slate-900 whitespace-nowrap">{row.student.fullName}</td>
+                            <td className="py-2 px-3 border-r border-slate-300 text-center font-semibold font-mono text-slate-600 whitespace-nowrap">{row.date}</td>
+                            <td className="py-2 px-3 text-center whitespace-nowrap">
+                              <span className={`inline-flex items-center justify-center min-w-[64px] px-2.5 py-0.5 rounded-md text-[11px] font-bold border whitespace-nowrap ${row.statusColor}`}>
                                 {row.statusLabel}
                               </span>
                             </td>

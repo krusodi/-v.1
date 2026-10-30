@@ -435,7 +435,7 @@ export default function StudentsTab({
                             </>
                           ) : (
                             <>
-                              <td className="py-3.5 px-4 font-semibold text-slate-500">เลขที่ {std.no}</td>
+                              <td className="py-3.5 px-4 font-semibold text-slate-600 font-mono">{std.no}</td>
                               <td className="py-3.5 px-4 font-mono text-slate-500 text-xs hidden sm:table-cell">{std.studentId || '-'}</td>
                               <td className="py-3.5 px-4 font-medium text-slate-800">
                                 <div>{std.fullName}</div>

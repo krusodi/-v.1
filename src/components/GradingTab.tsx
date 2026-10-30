@@ -303,7 +303,7 @@ export default function GradingTab({
                         
                         return (
                           <tr key={std.id} className="hover:bg-slate-50/30 transition-colors">
-                            <td className="py-4 px-4 font-bold text-slate-500">เลขที่ {std.no}</td>
+                            <td className="py-4 px-4 font-bold text-slate-600 font-mono">{std.no}</td>
                             <td className="py-4 px-4 font-semibold text-slate-800">{std.fullName}</td>
                             <td className="py-4 px-4 text-center hidden sm:table-cell">
                               <div className="flex items-center justify-center gap-2.5">
