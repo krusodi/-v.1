@@ -331,28 +331,6 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
     return Object.values(freqMap).sort((a, b) => b.date.localeCompare(a.date));
   }, [appData.attendance, selectedClassId, selectedMonth, classStudents]);
 
-  // Overall frequency statistics for current filter
-  const frequencyStats = useMemo(() => {
-    let records = appData.attendance.filter(
-      a => a.classId === selectedClassId && a.status !== 'PRESENT'
-    );
-
-    if (selectedMonth !== 'ALL') {
-      records = records.filter(r => r.date.startsWith(selectedMonth));
-    }
-    if (selectedDate !== 'ALL') {
-      records = records.filter(r => r.date === selectedDate);
-    }
-
-    const absent = records.filter(r => r.status === 'ABSENT').length;
-    const leave = records.filter(r => r.status === 'LEAVE').length;
-    const sick = records.filter(r => r.status === 'SICK').length;
-    const late = records.filter(r => r.status === 'LATE').length;
-    const total = records.length;
-
-    return { absent, leave, sick, late, total };
-  }, [appData.attendance, selectedClassId, selectedMonth, selectedDate]);
-
   // 4. DATA PREPARATION: INDIVIDUAL STUDENT HISTORY
   const studentHistoryData = useMemo(() => {
     if (!activeStudent) return [];
@@ -710,39 +688,6 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
             {/* 3. Absences & Leaves Log List & Daily Frequency Analysis */}
             {reportType === 'ABSENCES_LEAVES' && (
               <div className="space-y-6">
-                {/* 3.1 Frequency Overview Metric Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                    <span className="block text-[10px] text-slate-500 font-bold mb-0.5">ความถี่รวมทั้งหมด</span>
-                    <span className="text-base sm:text-lg font-bold font-mono text-slate-800">
-                      {frequencyStats.total} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
-                    </span>
-                  </div>
-                  <div className="p-3 bg-rose-50/80 border border-rose-200 rounded-xl text-center">
-                    <span className="block text-[10px] text-rose-700 font-bold mb-0.5">ความถี่ขาดเรียน</span>
-                    <span className="text-base sm:text-lg font-bold font-mono text-rose-600">
-                      {frequencyStats.absent} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
-                    </span>
-                  </div>
-                  <div className="p-3 bg-indigo-50/80 border border-indigo-200 rounded-xl text-center">
-                    <span className="block text-[10px] text-indigo-700 font-bold mb-0.5">ความถี่ลาป่วย</span>
-                    <span className="text-base sm:text-lg font-bold font-mono text-indigo-600">
-                      {frequencyStats.sick} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
-                    </span>
-                  </div>
-                  <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-center">
-                    <span className="block text-[10px] text-blue-700 font-bold mb-0.5">ความถี่ลากิจ</span>
-                    <span className="text-base sm:text-lg font-bold font-mono text-blue-600">
-                      {frequencyStats.leave} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
-                    </span>
-                  </div>
-                  <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-center col-span-2 sm:col-span-1">
-                    <span className="block text-[10px] text-amber-700 font-bold mb-0.5">ความถี่มาสาย</span>
-                    <span className="text-base sm:text-lg font-bold font-mono text-amber-600">
-                      {frequencyStats.late} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
-                    </span>
-                  </div>
-                </div>
 
                 {/* Filter info indicator if filtered by specific date */}
                 {selectedDate !== 'ALL' && (
