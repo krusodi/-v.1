@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { Classroom, Student, Assignment, ScoreRecord, AttendanceRecord, AppData } from '../types';
-import { Printer, Search, Download, ClipboardList, TrendingUp, Calendar, FileText, AlertCircle, Sparkles } from 'lucide-react';
+import { Printer, Search, Download, ClipboardList, TrendingUp, Calendar, FileText, AlertCircle, Sparkles, BarChart3, X, Filter } from 'lucide-react';
 
 interface ReportsTabProps {
   appData: AppData;
@@ -15,6 +15,7 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
+  const [selectedDate, setSelectedDate] = useState<string>('ALL');
 
   // Extract unique months (YYYY-MM) in selected classroom's attendance records
   const availableMonths = useMemo(() => {
@@ -29,6 +30,21 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
     return Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
   }, [appData.attendance, selectedClassId]);
 
+  // Extract unique recorded dates (YYYY-MM-DD) for selected class & month
+  const availableDates = useMemo(() => {
+    const datesSet = new Set<string>();
+    appData.attendance
+      .filter(a => a.classId === selectedClassId)
+      .forEach(record => {
+        if (record.date) {
+          if (selectedMonth === 'ALL' || record.date.startsWith(selectedMonth)) {
+            datesSet.add(record.date);
+          }
+        }
+      });
+    return Array.from(datesSet).sort((a, b) => b.localeCompare(a));
+  }, [appData.attendance, selectedClassId, selectedMonth]);
+
   const formatThaiMonthYear = (yearMonthStr: string) => {
     if (!yearMonthStr || yearMonthStr === 'ALL') return '';
     const [yearStr, monthStr] = yearMonthStr.split('-');
@@ -39,6 +55,25 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
       'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
     ];
     return `${thaiMonths[month - 1]} ${year + 543}`;
+  };
+
+  const formatThaiDate = (dateStr: string, short = false) => {
+    if (!dateStr || dateStr === 'ALL') return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const year = parseInt(parts[0], 10) + 543;
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    const thaiMonthsShort = [
+      'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+    ];
+    const thaiMonthsFull = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+    const mName = short ? thaiMonthsShort[month - 1] : thaiMonthsFull[month - 1];
+    return `${day} ${mName} ${year}`;
   };
 
   // Auto update selected class if current deleted
@@ -176,7 +211,7 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
     });
   }, [filteredStudents, appData.attendance, selectedClassId, selectedMonth]);
 
-  // 3. DATA PREPARATION: ABSENCES / LEAVES LIST
+  // 3. DATA PREPARATION: ABSENCES / LEAVES LIST & DAILY FREQUENCY
   const absencesLeavesData = useMemo(() => {
     // Get all records with LATE, LEAVE, SICK, ABSENT status for this class
     const logs: { student: Student; date: string; status: string; statusLabel: string; statusColor: string }[] = [];
@@ -185,6 +220,10 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
 
     if (selectedMonth !== 'ALL') {
       filteredRecords = filteredRecords.filter(r => r.date.startsWith(selectedMonth));
+    }
+
+    if (selectedDate !== 'ALL') {
+      filteredRecords = filteredRecords.filter(r => r.date === selectedDate);
     }
 
     filteredRecords.forEach(record => {
@@ -223,7 +262,96 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
 
     // Sort chronologically (latest date first)
     return logs.sort((a, b) => b.date.localeCompare(a.date));
-  }, [appData.attendance, selectedClassId, classStudents, searchQuery, selectedMonth]);
+  }, [appData.attendance, selectedClassId, classStudents, searchQuery, selectedMonth, selectedDate]);
+
+  // Daily Frequency breakdown for Absences & Leaves (ความถี่เฉพาะวัน)
+  const dailyFrequencyData = useMemo(() => {
+    const freqMap: Record<string, {
+      date: string;
+      absentCount: number;
+      leaveCount: number;
+      sickCount: number;
+      lateCount: number;
+      totalFrequency: number;
+      students: { no: number; fullName: string; label: string; color: string }[];
+    }> = {};
+
+    let records = appData.attendance.filter(
+      a => a.classId === selectedClassId && a.status !== 'PRESENT'
+    );
+
+    if (selectedMonth !== 'ALL') {
+      records = records.filter(r => r.date.startsWith(selectedMonth));
+    }
+
+    records.forEach(r => {
+      if (!freqMap[r.date]) {
+        freqMap[r.date] = {
+          date: r.date,
+          absentCount: 0,
+          leaveCount: 0,
+          sickCount: 0,
+          lateCount: 0,
+          totalFrequency: 0,
+          students: [],
+        };
+      }
+      const item = freqMap[r.date];
+      item.totalFrequency += 1;
+      let label = 'ขาดเรียน';
+      let color = 'text-rose-600 bg-rose-50 border-rose-100';
+
+      if (r.status === 'ABSENT') {
+        item.absentCount += 1;
+      } else if (r.status === 'LEAVE') {
+        item.leaveCount += 1;
+        label = 'ลากิจ';
+        color = 'text-blue-600 bg-blue-50 border-blue-100';
+      } else if (r.status === 'SICK') {
+        item.sickCount += 1;
+        label = 'ลาป่วย';
+        color = 'text-indigo-600 bg-indigo-50 border-indigo-100';
+      } else if (r.status === 'LATE') {
+        item.lateCount += 1;
+        label = 'สาย';
+        color = 'text-amber-600 bg-amber-50 border-amber-100';
+      }
+
+      const std = classStudents.find(s => s.id === r.studentId);
+      if (std) {
+        item.students.push({
+          no: std.no,
+          fullName: std.fullName,
+          label,
+          color,
+        });
+      }
+    });
+
+    return Object.values(freqMap).sort((a, b) => b.date.localeCompare(a.date));
+  }, [appData.attendance, selectedClassId, selectedMonth, classStudents]);
+
+  // Overall frequency statistics for current filter
+  const frequencyStats = useMemo(() => {
+    let records = appData.attendance.filter(
+      a => a.classId === selectedClassId && a.status !== 'PRESENT'
+    );
+
+    if (selectedMonth !== 'ALL') {
+      records = records.filter(r => r.date.startsWith(selectedMonth));
+    }
+    if (selectedDate !== 'ALL') {
+      records = records.filter(r => r.date === selectedDate);
+    }
+
+    const absent = records.filter(r => r.status === 'ABSENT').length;
+    const leave = records.filter(r => r.status === 'LEAVE').length;
+    const sick = records.filter(r => r.status === 'SICK').length;
+    const late = records.filter(r => r.status === 'LATE').length;
+    const total = records.length;
+
+    return { absent, leave, sick, late, total };
+  }, [appData.attendance, selectedClassId, selectedMonth, selectedDate]);
 
   // 4. DATA PREPARATION: INDIVIDUAL STUDENT HISTORY
   const studentHistoryData = useMemo(() => {
@@ -397,10 +525,16 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
 
               {/* Month selector for attendance-related reports */}
               {reportType !== 'SCORES' && (
-                <div className="w-full sm:w-48">
+                <div className="w-full sm:w-44">
                   <select
                     value={selectedMonth}
-                    onChange={e => setSelectedMonth(e.target.value)}
+                    onChange={e => {
+                      const newMonth = e.target.value;
+                      setSelectedMonth(newMonth);
+                      if (selectedDate !== 'ALL' && newMonth !== 'ALL' && !selectedDate.startsWith(newMonth)) {
+                        setSelectedDate('ALL');
+                      }
+                    }}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-base sm:text-xs font-bold focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-700 cursor-pointer transition-all"
                   >
                     <option value="ALL">🗓️ ทุกเดือน (ทั้งหมด)</option>
@@ -410,6 +544,34 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
                       </option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {/* Specific Date selector for ABSENCES_LEAVES */}
+              {reportType === 'ABSENCES_LEAVES' && (
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <select
+                    value={selectedDate}
+                    onChange={e => setSelectedDate(e.target.value)}
+                    className="w-full sm:w-48 px-3 py-2 rounded-xl border border-slate-200 text-base sm:text-xs font-bold focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-700 cursor-pointer transition-all"
+                  >
+                    <option value="ALL">📅 ทุกวัน (ทั้งหมด)</option>
+                    {availableDates.map(d => (
+                      <option key={d} value={d}>
+                        📅 {formatThaiDate(d, true)}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedDate !== 'ALL' && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDate('ALL')}
+                      className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer transition-colors shrink-0"
+                      title="ล้างตัวกรองวัน (แสดงทุกวัน)"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -447,7 +609,11 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
               <div className="inline-block mt-2 font-bold px-4 py-1 text-xs bg-slate-100 text-slate-800 rounded-full border border-slate-200 uppercase tracking-wide print:bg-transparent print:border-slate-400">
                 {reportType === 'SCORES' && 'สรุปคะแนนเก็บ'}
                 {reportType === 'ATTENDANCE' && `การเข้าเรียนภาพรวม ${selectedMonth === 'ALL' ? '(ทั้งหมด)' : `ประจำเดือน ${formatThaiMonthYear(selectedMonth)}`}`}
-                {reportType === 'ABSENCES_LEAVES' && `สถิติ ขาด/ลา ${selectedMonth === 'ALL' ? '(ทั้งหมด)' : `ประจำเดือน ${formatThaiMonthYear(selectedMonth)}`}`}
+                {reportType === 'ABSENCES_LEAVES' && (
+                  selectedDate !== 'ALL'
+                    ? `สถิติ ขาด/ลา ประจำวันที่ ${formatThaiDate(selectedDate)}`
+                    : `สถิติ ขาด/ลา ${selectedMonth === 'ALL' ? '(ทั้งหมด)' : `ประจำเดือน ${formatThaiMonthYear(selectedMonth)}`}`
+                )}
                 {reportType === 'STUDENT_HISTORY' && `สรุปวันที่ ขาด,ลา,สาย: ${activeStudent?.fullName || ''} ${selectedMonth === 'ALL' ? '(ทั้งหมด)' : `ประจำเดือน ${formatThaiMonthYear(selectedMonth)}`}`}
               </div>
             </div>
@@ -541,41 +707,165 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
               </div>
             )}
 
-            {/* 3. Absences & Leaves Log List */}
+            {/* 3. Absences & Leaves Log List & Daily Frequency Analysis */}
             {reportType === 'ABSENCES_LEAVES' && (
-              <div className="space-y-4">
-                {absencesLeavesData.length === 0 ? (
-                  <div className="text-center py-12 border-2 border-dashed border-slate-100 rounded-xl text-slate-400">
-                    ไม่มีบันทึกข้อมูลการ ขาด/ลา ในชั้นเรียนนี้
+              <div className="space-y-6">
+                {/* 3.1 Frequency Overview Metric Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                    <span className="block text-[10px] text-slate-500 font-bold mb-0.5">ความถี่รวมทั้งหมด</span>
+                    <span className="text-base sm:text-lg font-bold font-mono text-slate-800">
+                      {frequencyStats.total} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
+                    </span>
                   </div>
-                ) : (
-                  <div className="overflow-x-auto border border-slate-800 rounded-md">
-                    <table className="w-full text-left border-collapse text-xs font-sans">
-                      <thead>
-                        <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-800">
-                          <th className="py-2.5 px-2 border-r border-slate-800 text-center w-14 sm:w-16 min-w-[50px] whitespace-nowrap">เลขที่</th>
-                          <th className="py-2.5 px-3 border-r border-slate-800 min-w-[170px] sm:min-w-[200px] whitespace-nowrap">ชื่อ-นามสกุล</th>
-                          <th className="py-2.5 px-3 border-r border-slate-800 text-center w-36 min-w-[120px] whitespace-nowrap">วันที่บันทึก</th>
-                          <th className="py-2.5 px-3 text-center w-28 min-w-[90px] whitespace-nowrap">สถานะ</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-400">
-                        {absencesLeavesData.map((row, idx) => (
-                          <tr key={`${row.student.id}-${row.date}`} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                            <td className="py-2 px-2 border-r border-slate-300 text-center font-bold font-mono text-slate-700 whitespace-nowrap">{row.student.no}</td>
-                            <td className="py-2 px-3 border-r border-slate-300 font-semibold text-slate-900 whitespace-nowrap">{row.student.fullName}</td>
-                            <td className="py-2 px-3 border-r border-slate-300 text-center font-semibold font-mono text-slate-600 whitespace-nowrap">{row.date}</td>
-                            <td className="py-2 px-3 text-center whitespace-nowrap">
-                              <span className={`inline-flex items-center justify-center min-w-[64px] px-2.5 py-0.5 rounded-md text-[11px] font-bold border whitespace-nowrap ${row.statusColor}`}>
-                                {row.statusLabel}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="p-3 bg-rose-50/80 border border-rose-200 rounded-xl text-center">
+                    <span className="block text-[10px] text-rose-700 font-bold mb-0.5">ความถี่ขาดเรียน</span>
+                    <span className="text-base sm:text-lg font-bold font-mono text-rose-600">
+                      {frequencyStats.absent} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
+                    </span>
+                  </div>
+                  <div className="p-3 bg-indigo-50/80 border border-indigo-200 rounded-xl text-center">
+                    <span className="block text-[10px] text-indigo-700 font-bold mb-0.5">ความถี่ลาป่วย</span>
+                    <span className="text-base sm:text-lg font-bold font-mono text-indigo-600">
+                      {frequencyStats.sick} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
+                    </span>
+                  </div>
+                  <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-center">
+                    <span className="block text-[10px] text-blue-700 font-bold mb-0.5">ความถี่ลากิจ</span>
+                    <span className="text-base sm:text-lg font-bold font-mono text-blue-600">
+                      {frequencyStats.leave} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
+                    </span>
+                  </div>
+                  <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-center col-span-2 sm:col-span-1">
+                    <span className="block text-[10px] text-amber-700 font-bold mb-0.5">ความถี่มาสาย</span>
+                    <span className="text-base sm:text-lg font-bold font-mono text-amber-600">
+                      {frequencyStats.late} <span className="text-[10px] font-normal font-sans">ครั้ง</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Filter info indicator if filtered by specific date */}
+                {selectedDate !== 'ALL' && (
+                  <div className="p-3 bg-indigo-50/90 border border-indigo-200 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-indigo-900 print:hidden">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>แสดงเฉพาะวันที่: <strong>{formatThaiDate(selectedDate)}</strong> ({absencesLeavesData.length} คน)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDate('ALL')}
+                      className="px-2.5 py-1 bg-white hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      แสดงทุกวัน
+                    </button>
                   </div>
                 )}
+
+                {/* 3.2 Daily Frequency Summary Table (ตารางสรุปความถี่เฉพาะวัน) */}
+                {dailyFrequencyData.length > 0 && selectedDate === 'ALL' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>ตารางสรุปความถี่ ขาด/ลา แยกเฉพาะวัน (Daily Frequency)</span>
+                        <span className="text-[10px] font-normal text-slate-400">({dailyFrequencyData.length} วัน)</span>
+                      </h4>
+                    </div>
+
+                    <div className="overflow-x-auto border border-slate-700 rounded-md">
+                      <table className="w-full text-left border-collapse text-xs font-sans">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-700">
+                            <th className="py-2 px-2 border-r border-slate-700 text-center w-12">ลำดับ</th>
+                            <th className="py-2 px-3 border-r border-slate-700 min-w-[130px]">วันที่</th>
+                            <th className="py-2 px-2 border-r border-slate-700 text-center font-bold w-20">ความถี่รวม</th>
+                            <th className="py-2 px-2 border-r border-slate-700 text-center text-rose-700 bg-rose-50/50 w-16">ขาด</th>
+                            <th className="py-2 px-2 border-r border-slate-700 text-center text-indigo-700 bg-indigo-50/50 w-16">ลาป่วย</th>
+                            <th className="py-2 px-2 border-r border-slate-700 text-center text-blue-700 bg-blue-50/50 w-16">ลากิจ</th>
+                            <th className="py-2 px-2 border-r border-slate-700 text-center text-amber-700 bg-amber-50/50 w-16">สาย</th>
+                            <th className="py-2 px-2 text-center w-28 print:hidden">เลือกดูเฉพาะวัน</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-300">
+                          {dailyFrequencyData.map((item, idx) => (
+                            <tr key={item.date} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-indigo-50/40 transition-colors`}>
+                              <td className="py-2 px-2 border-r border-slate-300 text-center font-mono text-slate-600 font-semibold">{idx + 1}</td>
+                              <td className="py-2 px-3 border-r border-slate-300 font-semibold text-slate-900 whitespace-nowrap">
+                                <div>{formatThaiDate(item.date)}</div>
+                                <span className="text-[10px] font-mono text-slate-400 font-normal">{item.date}</span>
+                              </td>
+                              <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-slate-800">
+                                <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 font-bold text-xs">{item.totalFrequency} คน</span>
+                              </td>
+                              <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-rose-600">{item.absentCount > 0 ? item.absentCount : '-'}</td>
+                              <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-indigo-600">{item.sickCount > 0 ? item.sickCount : '-'}</td>
+                              <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-blue-600">{item.leaveCount > 0 ? item.leaveCount : '-'}</td>
+                              <td className="py-2 px-2 border-r border-slate-300 text-center font-mono font-bold text-amber-600">{item.lateCount > 0 ? item.lateCount : '-'}</td>
+                              <td className="py-2 px-2 text-center print:hidden">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedDate(item.date)}
+                                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-[11px] transition-colors cursor-pointer whitespace-nowrap"
+                                >
+                                  ดูเฉพาะวันนี้
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3.3 Detailed Student Records Table */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>รายการบันทึกนักเรียนที่ ขาด/ลา {selectedDate !== 'ALL' ? `(เฉพาะวันที่ ${formatThaiDate(selectedDate)})` : ''}</span>
+                      <span className="text-[10px] font-normal text-slate-400">({absencesLeavesData.length} รายการ)</span>
+                    </h4>
+                  </div>
+
+                  {absencesLeavesData.length === 0 ? (
+                    <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs">
+                      {selectedDate !== 'ALL'
+                        ? `ไม่มีนักเรียน ขาด/ลา ในวันที่ ${formatThaiDate(selectedDate)}`
+                        : 'ไม่มีบันทึกข้อมูลการ ขาด/ลา ในช่วงเวลาที่เลือก'}
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto border border-slate-800 rounded-md">
+                      <table className="w-full text-left border-collapse text-xs font-sans">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-800">
+                            <th className="py-2.5 px-2 border-r border-slate-800 text-center w-14 sm:w-16 min-w-[50px] whitespace-nowrap">เลขที่</th>
+                            <th className="py-2.5 px-3 border-r border-slate-800 min-w-[170px] sm:min-w-[200px] whitespace-nowrap">ชื่อ-นามสกุล</th>
+                            <th className="py-2.5 px-3 border-r border-slate-800 text-center w-36 min-w-[120px] whitespace-nowrap">วันที่บันทึก</th>
+                            <th className="py-2.5 px-3 text-center w-28 min-w-[90px] whitespace-nowrap">สถานะ</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-400">
+                          {absencesLeavesData.map((row, idx) => (
+                            <tr key={`${row.student.id}-${row.date}`} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                              <td className="py-2 px-2 border-r border-slate-300 text-center font-bold font-mono text-slate-700 whitespace-nowrap">{row.student.no}</td>
+                              <td className="py-2 px-3 border-r border-slate-300 font-semibold text-slate-900 whitespace-nowrap">{row.student.fullName}</td>
+                              <td className="py-2 px-3 border-r border-slate-300 text-center font-semibold font-mono text-slate-600 whitespace-nowrap">
+                                <div>{formatThaiDate(row.date, true)}</div>
+                                <span className="text-[10px] text-slate-400 font-normal">({row.date})</span>
+                              </td>
+                              <td className="py-2 px-3 text-center whitespace-nowrap">
+                                <span className={`inline-flex items-center justify-center min-w-[64px] px-2.5 py-0.5 rounded-md text-[11px] font-bold border whitespace-nowrap ${row.statusColor}`}>
+                                  {row.statusLabel}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
