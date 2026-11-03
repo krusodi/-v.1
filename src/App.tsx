@@ -105,7 +105,7 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
 
   // Tab State
-  const [currentTab, setCurrentTab] = useState<'classrooms' | 'students' | 'attendance' | 'grading' | 'reports' | 'management'>('classrooms');
+  const [currentTab, setCurrentTab] = useState<'attendance' | 'grading' | 'reports' | 'classrooms' | 'students' | 'management'>('attendance');
 
   // Toasts Notification State
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -963,30 +963,7 @@ export default function App() {
       <nav className="print:hidden bg-white/90 backdrop-blur-md border-b border-slate-200/50 sticky top-[70px] z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-1 sm:space-x-2 overflow-x-auto py-2.5 scrollbar-none">
-            <button
-              onClick={() => setCurrentTab('classrooms')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
-                currentTab === 'classrooms'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
-              }`}
-            >
-              <BookOpen className="w-4.5 h-4.5" />
-              ชั้นเรียน
-            </button>
-
-            <button
-              onClick={() => setCurrentTab('students')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
-                currentTab === 'students'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
-              }`}
-            >
-              <Users className="w-4.5 h-4.5" />
-              นักเรียน
-            </button>
-
+            {/* 1. เช็คชื่อ */}
             <button
               onClick={() => setCurrentTab('attendance')}
               className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
@@ -999,6 +976,7 @@ export default function App() {
               เช็คชื่อ
             </button>
 
+            {/* 2. คะแนน */}
             <button
               onClick={() => setCurrentTab('grading')}
               className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
@@ -1011,6 +989,7 @@ export default function App() {
               คะแนน
             </button>
 
+            {/* 3. รายงาน */}
             <button
               onClick={() => setCurrentTab('reports')}
               className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
@@ -1023,6 +1002,33 @@ export default function App() {
               รายงาน
             </button>
 
+            {/* 4. ชั้นเรียน */}
+            <button
+              onClick={() => setCurrentTab('classrooms')}
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+                currentTab === 'classrooms'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+              }`}
+            >
+              <BookOpen className="w-4.5 h-4.5" />
+              ชั้นเรียน
+            </button>
+
+            {/* 5. นักเรียน */}
+            <button
+              onClick={() => setCurrentTab('students')}
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+                currentTab === 'students'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+              }`}
+            >
+              <Users className="w-4.5 h-4.5" />
+              นักเรียน
+            </button>
+
+            {/* 6. จัดการข้อมูล */}
             {isAdmin && (
               <button
                 onClick={() => setCurrentTab('management')}
