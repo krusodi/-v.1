@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { Classroom, Student, AttendanceRecord, AttendanceStatus, AppData } from '../types';
-import { Calendar, CheckCircle2, AlertCircle, RefreshCw, Trash2, Check, UserCheck, Search } from 'lucide-react';
+import { Calendar, CheckCircle2, AlertCircle, RefreshCw, Trash2, Check, UserCheck, Search, Lock } from 'lucide-react';
 
 interface AttendanceTabProps {
   appData: AppData;
+  isAdmin: boolean;
   isLoggedIn: boolean;
   onUpdateAttendance: (classId: string, date: string, studentId: string, status: AttendanceStatus) => void;
   onSetAllPresent: (classId: string, date: string) => void;
@@ -22,6 +23,7 @@ const STATUSES: { value: AttendanceStatus; label: string; short: string; color: 
 
 export default function AttendanceTab({
   appData,
+  isAdmin,
   isLoggedIn,
   onUpdateAttendance,
   onSetAllPresent,
@@ -92,10 +94,18 @@ export default function AttendanceTab({
   }, [classStudents, attendanceMap]);
 
   const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
+    if (!isAdmin) {
+      addToast('สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลได้อย่างเดียว ไม่สามารถเช็คชื่อหรือแก้ไขข้อมูลได้', 'error');
+      return;
+    }
     onUpdateAttendance(selectedClassId, selectedDate, studentId, status);
   };
 
   const handleSetAllPresent = () => {
+    if (!isAdmin) {
+      addToast('สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลได้อย่างเดียว ไม่สามารถเช็คชื่อได้', 'error');
+      return;
+    }
     if (classStudents.length === 0) {
       addToast('ไม่มีนักเรียนในชั้นเรียนนี้', 'error');
       return;
@@ -105,11 +115,19 @@ export default function AttendanceTab({
   };
 
   const handleResetToday = () => {
+    if (!isAdmin) {
+      addToast('เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถรีเซ็ตข้อมูลได้', 'error');
+      return;
+    }
     if (classStudents.length === 0) return;
     setConfirmActionType('RESET');
   };
 
   const handleDeleteToday = () => {
+    if (!isAdmin) {
+      addToast('เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถลบข้อมูลได้', 'error');
+      return;
+    }
     if (classStudents.length === 0) return;
     setConfirmActionType('DELETE');
   };
@@ -229,29 +247,43 @@ export default function AttendanceTab({
               </div>
 
               {/* Quick operations */}
-              <div className="border-t border-slate-100 pt-5 space-y-3">
-                <button
-                  onClick={handleSetAllPresent}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-md shadow-indigo-100 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-98 cursor-pointer"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  มาทั้งหมดวันนี้
-                </button>
-                <button
-                  onClick={handleResetToday}
-                  className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-2.5 px-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
-                  รีเซ็ตวันนี้
-                </button>
-                <button
-                  onClick={handleDeleteToday}
-                  className="w-full bg-white hover:bg-rose-50 border border-rose-100 text-rose-700 font-bold py-2.5 px-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                  ลบวันนี้ออกจากระบบ
-                </button>
-              </div>
+              {isAdmin ? (
+                <div className="border-t border-slate-100 pt-5 space-y-3">
+                  <button
+                    onClick={handleSetAllPresent}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-md shadow-indigo-100 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-98 cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    มาทั้งหมดวันนี้
+                  </button>
+                  <button
+                    onClick={handleResetToday}
+                    className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-2.5 px-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
+                    รีเซ็ตวันนี้
+                  </button>
+                  <button
+                    onClick={handleDeleteToday}
+                    className="w-full bg-white hover:bg-rose-50 border border-rose-100 text-rose-700 font-bold py-2.5 px-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                    ลบวันนี้ออกจากระบบ
+                  </button>
+                </div>
+              ) : (
+                <div className="border-t border-slate-100 pt-4">
+                  <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-center space-y-1.5">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700">
+                      <Lock className="w-3.5 h-3.5 text-amber-600" />
+                      <span>โหมดดูข้อมูล (Read-Only)</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                      สิทธิ์ทั่วไป (User) ดูข้อมูลการเข้าเรียนได้ ไม่สามารถเพิ่ม ลบ หรือแก้ไขข้อมูลได้
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -263,7 +295,14 @@ export default function AttendanceTab({
                   <h3 className="text-base font-display font-bold text-slate-800">
                     สมุดลงเวลาเข้าเรียน วันที่: {selectedDate}
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5 font-medium">กดเลือกสถานะเพื่อเช็คชื่อ หรือบันทึกข้อมูลแบบเรียลไทม์</p>
+                  {isAdmin ? (
+                    <p className="text-xs text-slate-400 mt-0.5 font-medium">กดเลือกสถานะเพื่อเช็คชื่อ หรือบันทึกข้อมูลแบบเรียลไทม์</p>
+                  ) : (
+                    <p className="text-xs text-amber-700 mt-0.5 font-semibold flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-amber-600" />
+                      สิทธิ์ทั่วไป (User): แสดงสถานะการเข้าเรียน (อ่านอย่างเดียว)
+                    </p>
+                  )}
                 </div>
 
                 <div className="relative max-w-xs w-full">
@@ -300,6 +339,22 @@ export default function AttendanceTab({
                             <div className="flex items-center justify-center gap-1 sm:gap-1.5">
                               {STATUSES.map(st => {
                                 const isSelected = currentStatus === st.value;
+                                if (!isAdmin) {
+                                  return (
+                                    <span
+                                      key={st.value}
+                                      className={`px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-xs font-bold flex items-center justify-center gap-1 border select-none transition-all ${
+                                        isSelected
+                                          ? `${st.color} text-white border-transparent shadow-xs font-black`
+                                          : 'opacity-25 bg-slate-100/70 text-slate-400 border-slate-200'
+                                      }`}
+                                      title={isSelected ? `สถานะ: ${st.label}` : ''}
+                                    >
+                                      <span>{st.short}</span>
+                                      <span className="hidden sm:inline">{st.label}</span>
+                                    </span>
+                                  );
+                                }
                                 return (
                                   <button
                                     key={st.value}

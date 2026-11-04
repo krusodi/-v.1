@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { Classroom, Student, AppData } from '../types';
-import { Plus, Trash2, Edit2, Users, QrCode, Search, Check, X, ArrowUp, ArrowDown, Layers, SortAsc } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, QrCode, Search, Check, X, ArrowUp, ArrowDown, Layers, SortAsc, Lock } from 'lucide-react';
 
 export const SUBJECT_GROUPS = [
   { name: 'คณิตศาสตร์', color: 'rose', gradient: 'from-rose-50/50 to-pink-50/10', border: 'border-l-4 border-l-rose-500 border-slate-200/60', text: 'text-rose-700 bg-rose-50 hover:bg-rose-100/50', bullet: 'bg-rose-500' },
@@ -305,6 +305,14 @@ export default function ClassroomsTab({
 
   return (
     <div className="space-y-6">
+      {/* Read-Only Notice for User */}
+      {!isAdmin && (
+        <div className="p-4 bg-amber-50/80 border border-amber-200/70 rounded-2xl flex items-center gap-3 text-xs text-amber-800 font-semibold shadow-2xs">
+          <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลชั้นเรียนและ QR Code ได้เท่านั้น ไม่สามารถเพิ่ม แก้ไข จัดลำดับ หรือลบชั้นเรียนได้</span>
+        </div>
+      )}
+
       {/* Add Class Form (Admin Only) */}
       {isAdmin && (
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-100 border border-slate-200/60 p-6 md:p-8">

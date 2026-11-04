@@ -44,18 +44,21 @@ import {
   Lock, 
   X, 
   Eye, 
-  EyeOff,
-  Sparkles,
-  RefreshCw,
-  Check,
-  ShieldCheck,
-  HelpCircle,
-  Link2,
-  Copy,
-  Info,
-  ExternalLink,
-  AlertTriangle,
-  Upload
+  EyeOff, 
+  Sparkles, 
+  RefreshCw, 
+  Check, 
+  ShieldCheck, 
+  HelpCircle, 
+  Link2, 
+  Copy, 
+  Info, 
+  ExternalLink, 
+  AlertTriangle, 
+  Upload,
+  ChevronDown,
+  ChevronUp,
+  KeyRound
 } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'classroom_system_data';
@@ -102,6 +105,7 @@ export default function App() {
   const [role, setRole] = useState<UserRole>('NONE');
   const [pinInput, setPinInput] = useState('');
   const [showPin, setShowPin] = useState(false);
+  const [showKeypad, setShowKeypad] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   // Tab State
@@ -353,9 +357,28 @@ export default function App() {
     } else if (trimmedInput === data.settings.userPin) {
       setRole('USER');
       setPinInput('');
-      addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ใช้งานทั่วไป (User) สำเร็จ', 'success');
+      setCurrentTab('attendance');
+      addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ใช้งานทั่วไป (User - ดูได้อย่างเดียว) สำเร็จ', 'success');
     } else {
       setLoginError('รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      addToast('เข้าสู่ระบบไม่สำเร็จ รหัสผ่านผิดพลาด', 'error');
+    }
+  };
+
+  const handleQuickLogin = (pinToUse: string) => {
+    setLoginError('');
+    const trimmedInput = pinToUse.trim();
+    if (trimmedInput === data.settings.adminPin) {
+      setRole('ADMIN');
+      setPinInput('');
+      addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ดูแลระบบ (Admin) สำเร็จ', 'success');
+    } else if (trimmedInput === data.settings.userPin) {
+      setRole('USER');
+      setPinInput('');
+      setCurrentTab('attendance');
+      addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ใช้งานทั่วไป (User - ดูได้อย่างเดียว) สำเร็จ', 'success');
+    } else {
+      setLoginError('รหัส PIN ไม่ถูกต้อง');
       addToast('เข้าสู่ระบบไม่สำเร็จ รหัสผ่านผิดพลาด', 'error');
     }
   };
@@ -370,9 +393,9 @@ export default function App() {
         setGoogleUser(result.user);
         setGoogleToken(result.accessToken);
 
-        // Auto unlock user into role (ADMIN for target user krusodi.ns@gmail.com, or user)
+        // Auto unlock user into role (ADMIN for target user krusodi.ns@gmail.com, or USER)
         const userEmail = (result.user.email || '').toLowerCase();
-        const nextRole: UserRole = (userEmail === 'krusodi.ns@gmail.com' || role === 'NONE') ? 'ADMIN' : role;
+        const nextRole: UserRole = (userEmail === 'krusodi.ns@gmail.com') ? 'ADMIN' : 'USER';
         setRole(nextRole);
 
         // Save user profile in Firestore
@@ -447,6 +470,10 @@ export default function App() {
 
   // STATE UPDATE HELPERS
   const updateData = (newData: AppData) => {
+    if (role !== 'ADMIN') {
+      addToast('สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลได้อย่างเดียว ไม่สามารถเพิ่ม ลบ หรือแก้ไขข้อมูลได้', 'error');
+      return;
+    }
     hasPendingUserChangeRef.current = true;
     setData(newData);
   };
@@ -708,71 +735,169 @@ export default function App() {
   };
 
   // Safe checks
-  const isAdmin = role !== 'NONE';
+  const isAdmin = role === 'ADMIN';
 
   // LOGIN SCREEN RENDER
   if (role === 'NONE') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 max-w-md w-full p-8 space-y-6 relative overflow-hidden">
-          {/* Accent decoration */}
-          <div className="absolute top-0 inset-x-0 h-2 bg-indigo-600"></div>
-          
-          <div className="text-center space-y-2">
-            <div className="mx-auto w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-xs mb-3">
-              <Lock className="w-8 h-8" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50/40 to-slate-200/60 flex items-center justify-center p-3 sm:p-4 font-sans">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-slate-200/70 border border-slate-200/80 max-w-sm sm:max-w-md w-full p-5 sm:p-6 space-y-3.5 relative overflow-hidden transition-all">
+          {/* Subtle accent bar */}
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+
+          {/* Compact Header */}
+          <div className="flex items-center gap-3 pt-1">
+            <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white rounded-2xl flex items-center justify-center shadow-md shadow-indigo-100 shrink-0">
+              <Lock className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-bold text-slate-800">{data.settings.systemName}</h1>
-            <p className="text-xs text-slate-400 font-medium">กรุณาป้อนรหัสผ่าน (PIN) เพื่อเข้าสู่การจัดการข้อมูล</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg font-display font-bold text-slate-800 leading-tight truncate" title={data.settings.systemName}>
+                {data.settings.systemName}
+              </h1>
+              <p className="text-xs text-slate-400 font-medium truncate">
+                {data.settings.schoolName || 'ระบบบริหารจัดการชั้นเรียนออนไลน์'}
+              </p>
+            </div>
           </div>
 
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
-            <div className="relative">
-              <input
-                type={showPin ? 'text' : 'password'}
-                maxLength={10}
-                value={pinInput}
-                onChange={e => setPinInput(e.target.value)}
-                placeholder="ป้อนรหัส PIN 4 หลัก"
-                className="w-full text-center tracking-widest text-lg font-bold font-mono px-4 py-3.5 rounded-2xl border border-slate-200 focus:outline-none focus:border-indigo-500 bg-slate-50/50"
-                required
-              />
+          {/* Fast 1-Tap Role Buttons & Clear Default PIN Hints */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              เลือกระดับสิทธิ์เพื่อเข้าสู่ระบบทันที:
+            </span>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setShowPin(!showPin)}
-                className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                onClick={() => handleQuickLogin(data.settings.adminPin)}
+                className="p-2.5 rounded-xl border border-indigo-200/80 bg-indigo-50/60 hover:bg-indigo-100/70 active:scale-[0.98] transition-all text-left flex items-start gap-2 cursor-pointer group"
+                title={`เข้าสู่ระบบทันทีด้วยสิทธิ์ผู้ดูแล (PIN: ${data.settings.adminPin})`}
               >
-                {showPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs group-hover:bg-indigo-700">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-indigo-950 flex items-center gap-1">
+                    <span>ผู้ดูแล (Admin)</span>
+                  </div>
+                  <div className="text-[10px] text-indigo-600 font-mono font-semibold">
+                    PIN: {data.settings.adminPin}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickLogin(data.settings.userPin)}
+                className="p-2.5 rounded-xl border border-amber-200/80 bg-amber-50/60 hover:bg-amber-100/70 active:scale-[0.98] transition-all text-left flex items-start gap-2 cursor-pointer group"
+                title={`เข้าสู่ระบบทันทีด้วยสิทธิ์ผู้ใช้งานทั่วไป (PIN: ${data.settings.userPin})`}
+              >
+                <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs group-hover:bg-amber-600">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-amber-950 flex items-center gap-1">
+                    <span>ทั่วไป (User)</span>
+                  </div>
+                  <div className="text-[10px] text-amber-700 font-mono font-semibold">
+                    PIN: {data.settings.userPin} (ดูเท่านั้น)
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Custom PIN Form with inline button */}
+          <form onSubmit={handleLoginSubmit} className="space-y-2 pt-1 border-t border-slate-100">
+            <div className="flex items-center justify-between text-[10px] font-semibold text-slate-400">
+              <span>หรือ ป้อนรหัส PIN ด้วยตนเอง:</span>
+              <button
+                type="button"
+                onClick={() => setShowKeypad(!showKeypad)}
+                className="text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 cursor-pointer font-bold transition-colors"
+              >
+                <KeyRound className="w-3 h-3" />
+                <span>{showKeypad ? 'ซ่อนแป้นตัวเลข' : 'แป้นตัวเลข'}</span>
+                {showKeypad ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type={showPin ? 'text' : 'password'}
+                  maxLength={10}
+                  value={pinInput}
+                  onChange={e => setPinInput(e.target.value)}
+                  placeholder="ป้อนรหัส PIN 4 หลัก"
+                  className="w-full text-center tracking-widest text-base font-bold font-mono pl-3 pr-9 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 bg-slate-50/70 text-slate-800 placeholder:text-slate-400 placeholder:font-sans placeholder:tracking-normal placeholder:text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-2 px-3.5 rounded-xl text-xs sm:text-sm transition-all flex items-center gap-1 cursor-pointer shadow-xs shadow-indigo-100 shrink-0"
+              >
+                <Check className="w-4 h-4" />
+                <span>ตกลง</span>
               </button>
             </div>
 
             {loginError && (
-              <p className="text-center text-rose-500 text-xs font-semibold">{loginError}</p>
+              <p className="text-center text-rose-500 text-xs font-semibold py-0.5">{loginError}</p>
             )}
 
-            <button
-              type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3 px-4 rounded-2xl text-sm transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-            >
-              <Check className="w-4 h-4" />
-              เข้าสู่ระบบ
-            </button>
+            {/* Collapsible Compact Numeric Keypad */}
+            {showKeypad && (
+              <div className="pt-2 grid grid-cols-3 gap-1.5 animate-fadeIn">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setPinInput(prev => prev + num)}
+                    className="py-1.5 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200/60 rounded-lg font-bold font-mono text-slate-700 text-sm transition-all cursor-pointer"
+                  >
+                    {num}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPinInput('')}
+                  className="py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/50 rounded-lg font-bold text-xs transition-all cursor-pointer"
+                >
+                  ล้าง
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPinInput(prev => prev + '0')}
+                  className="py-1.5 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200/60 rounded-lg font-bold font-mono text-slate-700 text-sm transition-all cursor-pointer"
+                >
+                  0
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPinInput(prev => prev.slice(0, -1))}
+                  className="py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded-lg font-bold text-xs transition-all cursor-pointer"
+                >
+                  ลบ
+                </button>
+              </div>
+            )}
           </form>
 
-          {/* OR DIVIDER */}
-          <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-slate-200"></div>
-            <span className="flex-shrink mx-3 text-slate-400 text-[11px] font-bold uppercase tracking-wider">หรือ</span>
-            <div className="flex-grow border-t border-slate-200"></div>
-          </div>
-
-          {/* GMAIL / GOOGLE SIGN IN BUTTON */}
-          <div className="space-y-2.5">
+          {/* Google / Gmail Sign In & Realtime Status */}
+          <div className="pt-2 border-t border-slate-100 space-y-2">
             <button
               type="button"
               onClick={handleGoogleLogin}
               disabled={isSyncing}
-              className="w-full bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-bold py-3.5 px-4 rounded-2xl text-xs border border-slate-200 shadow-xs hover:border-slate-300 transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50"
+              className="w-full bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-bold py-2.5 px-3 rounded-xl text-xs border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -780,67 +905,20 @@ export default function App() {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
               </svg>
-              <span>{isSyncing ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Gmail (Google Account)'}</span>
+              <span>{isSyncing ? 'กำลังเชื่อมต่อ...' : 'เข้าสู่ระบบด้วย Gmail (Google Account)'}</span>
             </button>
-            <div className={`flex items-center justify-center gap-1.5 text-[10px] font-semibold py-1.5 px-3 rounded-xl border transition-all ${
-              realtimeStatus === 'connected'
-                ? 'text-emerald-700 bg-emerald-50/90 border-emerald-200/70'
-                : 'text-amber-700 bg-amber-50/80 border-amber-200/60'
-            }`}>
-              <span className={`w-2 h-2 rounded-full ${
-                realtimeStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-ping'
-              }`}></span>
-              <span>{realtimeStatus === 'connected' ? 'เชื่อมต่อฐานข้อมูล Real-time:' : 'เชื่อมต่อฐานข้อมูล:'} <strong>{TARGET_FIREBASE_PROJECT}</strong></span>
-            </div>
-          </div>
 
-          {/* Quick PIN Input Keypad (For mobile teachers!) */}
-          <div className="pt-2 border-t border-slate-100 space-y-4">
-            <span className="block text-center text-[10px] font-semibold text-slate-400 uppercase tracking-wider">หรือ แตะเพื่อป้อนรหัสอย่างรวดเร็ว</span>
-            
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => setPinInput(prev => prev + num)}
-                  className="py-3 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200/50 rounded-xl font-bold font-mono text-slate-700 text-sm transition-all shadow-2xs cursor-pointer"
-                >
-                  {num}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setPinInput('')}
-                className="py-3 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200/50 text-rose-600 rounded-xl font-bold text-xs transition-all cursor-pointer"
-              >
-                ล้างคำ
-              </button>
-              <button
-                type="button"
-                onClick={() => setPinInput(prev => prev + '0')}
-                className="py-3 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200/50 rounded-xl font-bold font-mono text-slate-700 text-sm transition-all shadow-2xs cursor-pointer"
-              >
-                0
-              </button>
-              <button
-                type="button"
-                onClick={() => handleLoginSubmit()}
-                className="py-3 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200/50 text-emerald-600 rounded-xl font-bold text-xs transition-all cursor-pointer"
-              >
-                ตกลง
-              </button>
+            <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
+              <span className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  realtimeStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-ping'
+                }`}></span>
+                <span>Firebase: <strong className="text-slate-600 font-mono">{TARGET_FIREBASE_PROJECT}</strong></span>
+              </span>
+              <span className={realtimeStatus === 'connected' ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'}>
+                {realtimeStatus === 'connected' ? 'ออนไลน์ Real-time' : 'กำลังเชื่อมต่อ'}
+              </span>
             </div>
-          </div>
-
-          {/* Role Access Guide */}
-          <div className="pt-4 border-t border-slate-100 text-center space-y-1.5 text-xs text-slate-400 font-semibold leading-relaxed">
-            <p className="font-bold flex items-center justify-center gap-1.5 text-slate-500">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-              คำแนะนำรหัสเข้าใช้งานเริ่มต้น:
-            </p>
-            <p>สิทธิ์ผู้ดูแล (Admin): <strong className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded font-mono">1234</strong> (ตั้งค่าแก้ไขได้)</p>
-            <p>สิทธิ์ผู้ใช้งาน (User): <strong className="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-mono">0000</strong> (เข้าเช็คชื่อได้)</p>
           </div>
         </div>
       </div>
@@ -889,15 +967,17 @@ export default function App() {
                   <span className="hidden md:inline font-mono text-[9px] opacity-80 ml-1">({lastSyncTime})</span>
                 )}
               </span>
-              <button
-                type="button"
-                onClick={handleSaveToFirebase}
-                disabled={isSyncing}
-                className="ml-1 p-1 hover:bg-black/5 rounded-lg transition-colors cursor-pointer"
-                title="บันทึกข้อมูลด่วนลง Firebase"
-              >
-                <Upload className="w-3 h-3" />
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleSaveToFirebase}
+                  disabled={isSyncing}
+                  className="ml-1 p-1 hover:bg-black/5 rounded-lg transition-colors cursor-pointer"
+                  title="บันทึกข้อมูลด่วนลง Firebase"
+                >
+                  <Upload className="w-3 h-3" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handlePullFromFirebase}
@@ -941,10 +1021,14 @@ export default function App() {
             )}
 
             {/* Role Badge Indicator */}
-            <div className="flex items-center gap-1 bg-slate-100 px-2.5 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold text-slate-600 border border-slate-200">
-              <ShieldCheck className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isAdmin ? 'text-indigo-600' : 'text-slate-400'}`} />
-              <span className="hidden sm:inline">{isAdmin ? 'สิทธิ์: ผู้ดูแล (Admin)' : 'สิทธิ์: ทั่วไป (User)'}</span>
-              <span className="sm:hidden">{isAdmin ? 'Admin' : 'User'}</span>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold border ${
+              isAdmin 
+                ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
+                : 'bg-amber-50 text-amber-800 border-amber-200'
+            }`}>
+              <ShieldCheck className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isAdmin ? 'text-indigo-600' : 'text-amber-600'}`} />
+              <span className="hidden sm:inline">{isAdmin ? 'สิทธิ์: ผู้ดูแล (Admin)' : 'สิทธิ์: ทั่วไป (ดูได้เท่านั้น)'}</span>
+              <span className="sm:hidden">{isAdmin ? 'Admin' : 'ดูอย่างเดียว'}</span>
             </div>
 
             {/* Logout Button */}
@@ -1077,6 +1161,7 @@ export default function App() {
         {currentTab === 'attendance' && (
           <AttendanceTab
             appData={data}
+            isAdmin={isAdmin}
             isLoggedIn={role !== 'NONE'}
             onUpdateAttendance={handleUpdateAttendance}
             onSetAllPresent={handleSetAllPresent}

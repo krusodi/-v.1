@@ -806,8 +806,8 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
                           <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-800">
                             <th className="py-2.5 px-2 border-r border-slate-800 text-center w-14 sm:w-16 min-w-[50px] whitespace-nowrap">เลขที่</th>
                             <th className="py-2.5 px-3 border-r border-slate-800 min-w-[170px] sm:min-w-[200px] whitespace-nowrap">ชื่อ-นามสกุล</th>
-                            <th className="py-2.5 px-3 border-r border-slate-800 text-center w-36 min-w-[120px] whitespace-nowrap">วันที่บันทึก</th>
-                            <th className="py-2.5 px-3 text-center w-28 min-w-[90px] whitespace-nowrap">สถานะ</th>
+                            <th className="py-2.5 px-3 border-r border-slate-800 text-center w-28 min-w-[90px] whitespace-nowrap">สถานะ</th>
+                            <th className="py-2.5 px-3 text-center w-36 min-w-[120px] whitespace-nowrap">วันที่บันทึก</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-400">
@@ -815,14 +815,14 @@ export default function ReportsTab({ appData, addToast }: ReportsTabProps) {
                             <tr key={`${row.student.id}-${row.date}`} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                               <td className="py-2 px-2 border-r border-slate-300 text-center font-bold font-mono text-slate-700 whitespace-nowrap">{row.student.no}</td>
                               <td className="py-2 px-3 border-r border-slate-300 font-semibold text-slate-900 whitespace-nowrap">{row.student.fullName}</td>
-                              <td className="py-2 px-3 border-r border-slate-300 text-center font-semibold font-mono text-slate-600 whitespace-nowrap">
-                                <div>{formatThaiDate(row.date, true)}</div>
-                                <span className="text-[10px] text-slate-400 font-normal">({row.date})</span>
-                              </td>
-                              <td className="py-2 px-3 text-center whitespace-nowrap">
+                              <td className="py-2 px-3 border-r border-slate-300 text-center whitespace-nowrap">
                                 <span className={`inline-flex items-center justify-center min-w-[64px] px-2.5 py-0.5 rounded-md text-[11px] font-bold border whitespace-nowrap ${row.statusColor}`}>
                                   {row.statusLabel}
                                 </span>
+                              </td>
+                              <td className="py-2 px-3 text-center font-semibold font-mono text-slate-600 whitespace-nowrap">
+                                <div>{formatThaiDate(row.date, true)}</div>
+                                <span className="text-[10px] text-slate-400 font-normal">({row.date})</span>
                               </td>
                             </tr>
                           ))}

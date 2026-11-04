@@ -1,6 +1,6 @@
 import { useState, useMemo, FormEvent } from 'react';
 import { Classroom, Student, AppData } from '../types';
-import { Plus, Trash2, Edit2, Users, FileSpreadsheet, Search, Check, X, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, FileSpreadsheet, Search, Check, X, AlertTriangle, Lock } from 'lucide-react';
 
 interface StudentsTabProps {
   appData: AppData;
@@ -73,6 +73,10 @@ export default function StudentsTab({
 
   const handleSingleAdd = (e: FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      addToast('สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลได้อย่างเดียว ไม่สามารถเพิ่มนักเรียนได้', 'error');
+      return;
+    }
     if (!selectedClassId) {
       addToast('กรุณาเลือกชั้นเรียนก่อน', 'error');
       return;
@@ -102,6 +106,10 @@ export default function StudentsTab({
   };
 
   const handleBulkAdd = () => {
+    if (!isAdmin) {
+      addToast('สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลได้อย่างเดียว ไม่สามารถเพิ่มนักเรียนได้', 'error');
+      return;
+    }
     if (!selectedClassId) {
       addToast('กรุณาเลือกชั้นเรียนก่อน', 'error');
       return;
@@ -191,6 +199,7 @@ export default function StudentsTab({
   };
 
   const handleStartEdit = (std: Student) => {
+    if (!isAdmin) return;
     setEditingId(std.id);
     setEditNo(std.no.toString());
     setEditStudentId(std.studentId || '');
@@ -198,6 +207,10 @@ export default function StudentsTab({
   };
 
   const handleSaveEdit = (std: Student) => {
+    if (!isAdmin) {
+      addToast('สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลได้อย่างเดียว ไม่สามารถแก้ไขข้อมูลได้', 'error');
+      return;
+    }
     const no = parseInt(editNo, 10);
     if (isNaN(no) || no <= 0) {
       addToast('เลขที่ต้องเป็นตัวเลขมากกว่า 0', 'error');
@@ -221,12 +234,24 @@ export default function StudentsTab({
   };
 
   const handleDelete = (id: string, name: string) => {
+    if (!isAdmin) {
+      addToast('เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถลบข้อมูลได้', 'error');
+      return;
+    }
     setConfirmDeleteId(id);
     setConfirmDeleteName(name);
   };
 
   return (
     <div className="space-y-6">
+      {/* Read-Only Notice for User */}
+      {!isAdmin && (
+        <div className="p-4 bg-amber-50/80 border border-amber-200/70 rounded-2xl flex items-center gap-3 text-xs text-amber-800 font-semibold shadow-2xs">
+          <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลรายชื่อนักเรียนได้เท่านั้น ไม่สามารถเพิ่ม แก้ไข หรือลบข้อมูลนักเรียนได้</span>
+        </div>
+      )}
+
       {/* Dropdown Select Class */}
       <div className="bg-white rounded-3xl shadow-xl shadow-slate-100 border border-slate-200/60 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">

@@ -1,6 +1,6 @@
 import { useState, useMemo, FormEvent } from 'react';
 import { Classroom, Student, Assignment, ScoreRecord, AppData } from '../types';
-import { Plus, Trash2, Check, Search, Percent, X, Award, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Check, Search, Percent, X, Award, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 
 interface GradingTabProps {
   appData: AppData;
@@ -92,6 +92,10 @@ export default function GradingTab({
       addToast('กรุณาเลือกชั้นเรียนก่อน', 'error');
       return;
     }
+    if (!isAdmin) {
+      addToast('สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลได้อย่างเดียว ไม่สามารถสร้างชิ้นงานได้', 'error');
+      return;
+    }
     if (!assignmentName.trim()) {
       addToast('กรุณากรอกชื่อชิ้นงาน', 'error');
       return;
@@ -114,11 +118,19 @@ export default function GradingTab({
   };
 
   const handleDeleteAssignment = (id: string, name: string) => {
+    if (!isAdmin) {
+      addToast('เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถลบชิ้นงานได้', 'error');
+      return;
+    }
     setConfirmDeleteId(id);
     setConfirmDeleteName(name);
   };
 
   const handleScoreChange = (studentId: string, valueStr: string, maxScoreVal: number) => {
+    if (!isAdmin) {
+      addToast('สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลได้อย่างเดียว ไม่สามารถแก้ไขคะแนนได้', 'error');
+      return;
+    }
     if (valueStr === '') {
       onUpdateScore(selectedClassId, activeAssignment!.id, studentId, 0);
       return;
@@ -143,6 +155,10 @@ export default function GradingTab({
   };
 
   const adjustScore = (studentId: string, currentScore: number, amount: number, maxScoreVal: number) => {
+    if (!isAdmin) {
+      addToast('สิทธิ์ผู้ใช้งานทั่วไป (User): ดูข้อมูลได้อย่างเดียว ไม่สามารถแก้ไขคะแนนได้', 'error');
+      return;
+    }
     const newScore = Math.max(0, Math.min(maxScoreVal, currentScore + amount));
     // round to 2 decimals
     const rounded = Math.round(newScore * 100) / 100;
@@ -258,11 +274,18 @@ export default function GradingTab({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h3 className="text-base font-display font-bold text-slate-800">
-                    กรอกคะแนนชิ้นงาน: <span className="text-indigo-600">{activeAssignment.name}</span>
+                    {isAdmin ? 'กรอกคะแนนชิ้นงาน:' : 'ดูคะแนนชิ้นงาน:'} <span className="text-indigo-600">{activeAssignment.name}</span>
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1 font-medium">
-                    คะแนนเต็ม: <strong className="text-slate-600 font-mono font-bold">{activeAssignment.maxScore}</strong> คะแนน • ตรวจสอบคะแนนไม่ให้เกินคะแนนเต็มอัตโนมัติ
-                  </p>
+                  {isAdmin ? (
+                    <p className="text-xs text-slate-400 mt-1 font-medium">
+                      คะแนนเต็ม: <strong className="text-slate-600 font-mono font-bold">{activeAssignment.maxScore}</strong> คะแนน • ตรวจสอบคะแนนไม่ให้เกินคะแนนเต็มอัตโนมัติ
+                    </p>
+                  ) : (
+                    <p className="text-xs text-amber-700 mt-1 font-semibold flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-amber-600" />
+                      สิทธิ์ทั่วไป (User): โหมดดูคะแนน (คะแนนเต็ม {activeAssignment.maxScore} คะแนน • อ่านอย่างเดียว)
+                    </p>
+                  )}
                 </div>
 
                 <div className="relative max-w-xs w-full">
@@ -317,53 +340,61 @@ export default function GradingTab({
                               </div>
                             </td>
                             <td className="py-4 px-4 text-right">
-                              <div className="inline-flex items-center gap-2">
-                                {/* Plus/Minus Action buttons */}
-                                <div className="hidden md:flex border border-slate-200 rounded-xl overflow-hidden shadow-2xs select-none">
-                                  <button
-                                    onClick={() => adjustScore(std.id, currentScore, -1, activeAssignment.maxScore)}
-                                    className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-xs cursor-pointer border-r border-slate-200 transition-colors"
-                                    title="-1 คะแนน"
-                                  >
-                                    -1
-                                  </button>
-                                  <button
-                                    onClick={() => adjustScore(std.id, currentScore, -0.5, activeAssignment.maxScore)}
-                                    className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-400 text-[10px] font-bold cursor-pointer border-r border-slate-200 transition-colors"
-                                    title="-0.5 คะแนน"
-                                  >
-                                    -0.5
-                                  </button>
-                                  <button
-                                    onClick={() => adjustScore(std.id, currentScore, 0.5, activeAssignment.maxScore)}
-                                    className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-400 text-[10px] font-bold cursor-pointer border-r border-slate-200 transition-colors"
-                                    title="+0.5 คะแนน"
-                                  >
-                                    +0.5
-                                  </button>
-                                  <button
-                                    onClick={() => adjustScore(std.id, currentScore, 1, activeAssignment.maxScore)}
-                                    className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-xs cursor-pointer transition-colors"
-                                    title="+1 คะแนน"
-                                  >
-                                    +1
-                                  </button>
-                                </div>
+                              {isAdmin ? (
+                                <div className="inline-flex items-center gap-2">
+                                  {/* Plus/Minus Action buttons */}
+                                  <div className="hidden md:flex border border-slate-200 rounded-xl overflow-hidden shadow-2xs select-none">
+                                    <button
+                                      onClick={() => adjustScore(std.id, currentScore, -1, activeAssignment.maxScore)}
+                                      className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-xs cursor-pointer border-r border-slate-200 transition-colors"
+                                      title="-1 คะแนน"
+                                    >
+                                      -1
+                                    </button>
+                                    <button
+                                      onClick={() => adjustScore(std.id, currentScore, -0.5, activeAssignment.maxScore)}
+                                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-400 text-[10px] font-bold cursor-pointer border-r border-slate-200 transition-colors"
+                                      title="-0.5 คะแนน"
+                                    >
+                                      -0.5
+                                    </button>
+                                    <button
+                                      onClick={() => adjustScore(std.id, currentScore, 0.5, activeAssignment.maxScore)}
+                                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-400 text-[10px] font-bold cursor-pointer border-r border-slate-200 transition-colors"
+                                      title="+0.5 คะแนน"
+                                    >
+                                      +0.5
+                                    </button>
+                                    <button
+                                      onClick={() => adjustScore(std.id, currentScore, 1, activeAssignment.maxScore)}
+                                      className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-xs cursor-pointer transition-colors"
+                                      title="+1 คะแนน"
+                                    >
+                                      +1
+                                    </button>
+                                  </div>
 
-                                {/* Direct Input */}
-                                <div className="relative">
-                                  <input
-                                    type="number"
-                                    step="any"
-                                    value={scoreMap[std.id] !== undefined ? scoreMap[std.id] : ''}
-                                    onChange={e => handleScoreChange(std.id, e.target.value, activeAssignment.maxScore)}
-                                    className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 border border-slate-200 rounded-xl text-right font-bold text-slate-800 font-mono focus:outline-none focus:border-indigo-500 bg-slate-50/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    placeholder="0"
-                                    min="0"
-                                    max={activeAssignment.maxScore}
-                                  />
+                                  {/* Direct Input */}
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      step="any"
+                                      value={scoreMap[std.id] !== undefined ? scoreMap[std.id] : ''}
+                                      onChange={e => handleScoreChange(std.id, e.target.value, activeAssignment.maxScore)}
+                                      className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 border border-slate-200 rounded-xl text-right font-bold text-slate-800 font-mono focus:outline-none focus:border-indigo-500 bg-slate-50/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                      placeholder="0"
+                                      min="0"
+                                      max={activeAssignment.maxScore}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
+                              ) : (
+                                <div className="inline-flex items-center justify-end">
+                                  <span className="px-3.5 py-1.5 bg-slate-100 border border-slate-200/80 rounded-xl text-slate-800 font-mono font-bold text-sm min-w-[50px] text-center shadow-2xs">
+                                    {scoreMap[std.id] !== undefined ? scoreMap[std.id] : 0}
+                                  </span>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         );
