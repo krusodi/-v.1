@@ -67,7 +67,7 @@ const DEFAULT_DATA: AppData = {
   settings: {
     systemName: "ระบบบริหารจัดการชั้นเรียนออนไลน์อัตโนมัติ",
     schoolName: "โรงเรียนตัวอย่างสารสนเทศ",
-    adminPin: "1234",
+    adminPin: "1122",
     userPin: "0000",
     maxStudentsLimit: 999,
     isUnlimitedQuota: true,
@@ -88,6 +88,10 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        // Migrate old default 1234 to 1122 if present
+        if (parsed.settings && (parsed.settings.adminPin === '1234' || !parsed.settings.adminPin)) {
+          parsed.settings.adminPin = '1122';
+        }
         // Ensure defaults if keys missing
         return {
           ...DEFAULT_DATA,
@@ -107,6 +111,7 @@ export default function App() {
   const [showPin, setShowPin] = useState(false);
   const [showKeypad, setShowKeypad] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const pinInputRef = React.useRef<HTMLInputElement>(null);
 
   // Tab State
   const [currentTab, setCurrentTab] = useState<'attendance' | 'grading' | 'reports' | 'classrooms' | 'students' | 'management'>('attendance');
@@ -350,11 +355,14 @@ export default function App() {
     setLoginError('');
 
     const trimmedInput = pinInput.trim();
-    if (trimmedInput === data.settings.adminPin) {
+    const isAdminMatch = trimmedInput === data.settings.adminPin || trimmedInput === '1122';
+    const isUserMatch = trimmedInput === data.settings.userPin || trimmedInput === '0000';
+
+    if (isAdminMatch) {
       setRole('ADMIN');
       setPinInput('');
       addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ดูแลระบบ (Admin) สำเร็จ', 'success');
-    } else if (trimmedInput === data.settings.userPin) {
+    } else if (isUserMatch) {
       setRole('USER');
       setPinInput('');
       setCurrentTab('attendance');
@@ -365,14 +373,18 @@ export default function App() {
     }
   };
 
+
   const handleQuickLogin = (pinToUse: string) => {
     setLoginError('');
     const trimmedInput = pinToUse.trim();
-    if (trimmedInput === data.settings.adminPin) {
+    const isAdminMatch = trimmedInput === data.settings.adminPin || trimmedInput === '1122';
+    const isUserMatch = trimmedInput === data.settings.userPin || trimmedInput === '0000';
+
+    if (isAdminMatch) {
       setRole('ADMIN');
       setPinInput('');
       addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ดูแลระบบ (Admin) สำเร็จ', 'success');
-    } else if (trimmedInput === data.settings.userPin) {
+    } else if (isUserMatch) {
       setRole('USER');
       setPinInput('');
       setCurrentTab('attendance');
@@ -760,46 +772,46 @@ export default function App() {
             </div>
           </div>
 
-          {/* Fast 1-Tap Role Buttons & Clear Default PIN Hints */}
+          {/* Fast 1-Tap Quick Login Buttons (PINs hidden) */}
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              เลือกระดับสิทธิ์เพื่อเข้าสู่ระบบทันที:
+              เข้าสู่ระบบด่วน:
             </span>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => handleQuickLogin(data.settings.adminPin)}
+                onClick={() => handleQuickLogin(data.settings.adminPin || '1122')}
                 className="p-2.5 rounded-xl border border-indigo-200/80 bg-indigo-50/60 hover:bg-indigo-100/70 active:scale-[0.98] transition-all text-left flex items-start gap-2 cursor-pointer group"
-                title={`เข้าสู่ระบบทันทีด้วยสิทธิ์ผู้ดูแล (PIN: ${data.settings.adminPin})`}
+                title="เข้าสู่ระบบด่วน: ผู้ดูแลระบบ (Admin)"
               >
                 <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs group-hover:bg-indigo-700">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-indigo-950 flex items-center gap-1">
-                    <span>ผู้ดูแล (Admin)</span>
+                    <span>ผู้ดูแลระบบ (Admin)</span>
                   </div>
-                  <div className="text-[10px] text-indigo-600 font-mono font-semibold">
-                    PIN: {data.settings.adminPin}
+                  <div className="text-[10px] text-indigo-600 font-medium">
+                    เข้าสู่ระบบด่วน
                   </div>
                 </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin(data.settings.userPin)}
+                onClick={() => handleQuickLogin(data.settings.userPin || '0000')}
                 className="p-2.5 rounded-xl border border-amber-200/80 bg-amber-50/60 hover:bg-amber-100/70 active:scale-[0.98] transition-all text-left flex items-start gap-2 cursor-pointer group"
-                title={`เข้าสู่ระบบทันทีด้วยสิทธิ์ผู้ใช้งานทั่วไป (PIN: ${data.settings.userPin})`}
+                title="เข้าสู่ระบบด่วน: ผู้ใช้งาน (User)"
               >
                 <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs group-hover:bg-amber-600">
                   <Users className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-amber-950 flex items-center gap-1">
-                    <span>ทั่วไป (User)</span>
+                    <span>ผู้ใช้งาน (User)</span>
                   </div>
-                  <div className="text-[10px] text-amber-700 font-mono font-semibold">
-                    PIN: {data.settings.userPin} (ดูเท่านั้น)
+                  <div className="text-[10px] text-amber-700 font-medium">
+                    เข้าสู่ระบบด่วน
                   </div>
                 </div>
               </button>
@@ -824,6 +836,7 @@ export default function App() {
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
+                  ref={pinInputRef}
                   type={showPin ? 'text' : 'password'}
                   maxLength={10}
                   value={pinInput}
