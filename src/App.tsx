@@ -107,6 +107,7 @@ export default function App() {
 
   // Auth States
   const [role, setRole] = useState<UserRole>('NONE');
+  const [targetRole, setTargetRole] = useState<'ADMIN' | 'USER' | null>(null);
   const [pinInput, setPinInput] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [showKeypad, setShowKeypad] = useState(false);
@@ -355,43 +356,101 @@ export default function App() {
     setLoginError('');
 
     const trimmedInput = pinInput.trim();
+    if (!trimmedInput) {
+      setLoginError('กรุณาป้อนรหัส PIN 4 หลัก');
+      addToast('กรุณาป้อนรหัส PIN 4 หลัก', 'error');
+      pinInputRef.current?.focus();
+      return;
+    }
+
     const isAdminMatch = trimmedInput === data.settings.adminPin || trimmedInput === '1122';
     const isUserMatch = trimmedInput === data.settings.userPin || trimmedInput === '0000';
 
-    if (isAdminMatch) {
-      setRole('ADMIN');
-      setPinInput('');
-      addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ดูแลระบบ (Admin) สำเร็จ', 'success');
-    } else if (isUserMatch) {
-      setRole('USER');
-      setPinInput('');
-      setCurrentTab('attendance');
-      addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ใช้งานทั่วไป (User - ดูได้อย่างเดียว) สำเร็จ', 'success');
+    if (targetRole === 'ADMIN') {
+      if (isAdminMatch) {
+        setRole('ADMIN');
+        setPinInput('');
+        setTargetRole(null);
+        addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ดูแลระบบ (Admin) สำเร็จ', 'success');
+      } else {
+        setLoginError('รหัส PIN ผู้ดูแลระบบไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+        addToast('รหัส PIN ผู้ดูแลระบบ (Admin) ไม่ถูกต้อง', 'error');
+      }
+    } else if (targetRole === 'USER') {
+      if (isUserMatch) {
+        setRole('USER');
+        setPinInput('');
+        setTargetRole(null);
+        setCurrentTab('attendance');
+        addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ใช้งานทั่วไป (User - ดูได้อย่างเดียว) สำเร็จ', 'success');
+      } else {
+        setLoginError('รหัส PIN ผู้ใช้งานไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+        addToast('รหัส PIN ผู้ใช้งาน (User) ไม่ถูกต้อง', 'error');
+      }
     } else {
-      setLoginError('รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
-      addToast('เข้าสู่ระบบไม่สำเร็จ รหัสผ่านผิดพลาด', 'error');
+      // Direct PIN input without clicking role button first
+      if (isAdminMatch) {
+        setRole('ADMIN');
+        setPinInput('');
+        setTargetRole(null);
+        addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ดูแลระบบ (Admin) สำเร็จ', 'success');
+      } else if (isUserMatch) {
+        setRole('USER');
+        setPinInput('');
+        setTargetRole(null);
+        setCurrentTab('attendance');
+        addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ใช้งานทั่วไป (User - ดูได้อย่างเดียว) สำเร็จ', 'success');
+      } else {
+        setLoginError('รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+        addToast('เข้าสู่ระบบไม่สำเร็จ รหัสผ่านผิดพลาด', 'error');
+      }
     }
   };
 
-
-  const handleQuickLogin = (pinToUse: string) => {
+  const handleSelectRole = (r: 'ADMIN' | 'USER') => {
     setLoginError('');
-    const trimmedInput = pinToUse.trim();
-    const isAdminMatch = trimmedInput === data.settings.adminPin || trimmedInput === '1122';
-    const isUserMatch = trimmedInput === data.settings.userPin || trimmedInput === '0000';
+    setTargetRole(r);
 
-    if (isAdminMatch) {
-      setRole('ADMIN');
-      setPinInput('');
-      addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ดูแลระบบ (Admin) สำเร็จ', 'success');
-    } else if (isUserMatch) {
-      setRole('USER');
-      setPinInput('');
-      setCurrentTab('attendance');
-      addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ใช้งานทั่วไป (User - ดูได้อย่างเดียว) สำเร็จ', 'success');
+    const trimmedInput = pinInput.trim();
+    // If user already typed 4 digits, check immediately upon clicking role button
+    if (trimmedInput.length >= 4) {
+      const isAdminMatch = trimmedInput === data.settings.adminPin || trimmedInput === '1122';
+      const isUserMatch = trimmedInput === data.settings.userPin || trimmedInput === '0000';
+
+      if (r === 'ADMIN') {
+        if (isAdminMatch) {
+          setRole('ADMIN');
+          setPinInput('');
+          setTargetRole(null);
+          addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ดูแลระบบ (Admin) สำเร็จ', 'success');
+          return;
+        } else {
+          setLoginError('รหัส PIN ผู้ดูแลระบบไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+          addToast('รหัส PIN ผู้ดูแลระบบ (Admin) ไม่ถูกต้อง', 'error');
+          return;
+        }
+      } else if (r === 'USER') {
+        if (isUserMatch) {
+          setRole('USER');
+          setPinInput('');
+          setTargetRole(null);
+          setCurrentTab('attendance');
+          addToast('เข้าสู่ระบบด้วยสิทธิ์ผู้ใช้งานทั่วไป (User - ดูได้อย่างเดียว) สำเร็จ', 'success');
+          return;
+        } else {
+          setLoginError('รหัส PIN ผู้ใช้งานไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+          addToast('รหัส PIN ผู้ใช้งาน (User) ไม่ถูกต้อง', 'error');
+          return;
+        }
+      }
+    }
+
+    // Require entering PIN
+    pinInputRef.current?.focus();
+    if (r === 'ADMIN') {
+      addToast('กรุณาใส่รหัส PIN ของผู้ดูแลระบบ (Admin) ในช่องด้านล่าง', 'success');
     } else {
-      setLoginError('รหัส PIN ไม่ถูกต้อง');
-      addToast('เข้าสู่ระบบไม่สำเร็จ รหัสผ่านผิดพลาด', 'error');
+      addToast('กรุณาใส่รหัส PIN ของผู้ใช้งาน (User) ในช่องด้านล่าง', 'success');
     }
   };
 
@@ -477,6 +536,7 @@ export default function App() {
   const handleLogout = () => {
     setRole('NONE');
     setPinInput('');
+    setTargetRole(null);
     addToast('ออกจากระบบเรียบร้อย', 'success');
   };
 
@@ -772,46 +832,56 @@ export default function App() {
             </div>
           </div>
 
-          {/* Fast 1-Tap Quick Login Buttons (PINs hidden) */}
+          {/* Fast 1-Tap Quick Login Role Buttons (PINs hidden, requires PIN entry) */}
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              เข้าสู่ระบบด่วน:
+              เลือกระดับสิทธิ์เข้าสู่ระบบ (ต้องใส่รหัส PIN):
             </span>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => handleQuickLogin(data.settings.adminPin || '1122')}
-                className="p-2.5 rounded-xl border border-indigo-200/80 bg-indigo-50/60 hover:bg-indigo-100/70 active:scale-[0.98] transition-all text-left flex items-start gap-2 cursor-pointer group"
-                title="เข้าสู่ระบบด่วน: ผู้ดูแลระบบ (Admin)"
+                onClick={() => handleSelectRole('ADMIN')}
+                className={`p-2.5 rounded-xl border text-left flex items-start gap-2 cursor-pointer transition-all ${
+                  targetRole === 'ADMIN'
+                    ? 'border-indigo-600 bg-indigo-100/90 ring-2 ring-indigo-500/30 shadow-xs'
+                    : 'border-indigo-200/80 bg-indigo-50/60 hover:bg-indigo-100/70'
+                }`}
+                title="คลิกเพื่อเข้าสู่ระบบผู้ดูแลระบบ (Admin) - ต้องใส่รหัส PIN"
               >
-                <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs group-hover:bg-indigo-700">
+                <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-indigo-950 flex items-center gap-1">
                     <span>ผู้ดูแลระบบ (Admin)</span>
                   </div>
-                  <div className="text-[10px] text-indigo-600 font-medium">
-                    เข้าสู่ระบบด่วน
+                  <div className="text-[10px] text-indigo-600 font-semibold flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" />
+                    <span>ต้องใส่รหัส</span>
                   </div>
                 </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin(data.settings.userPin || '0000')}
-                className="p-2.5 rounded-xl border border-amber-200/80 bg-amber-50/60 hover:bg-amber-100/70 active:scale-[0.98] transition-all text-left flex items-start gap-2 cursor-pointer group"
-                title="เข้าสู่ระบบด่วน: ผู้ใช้งาน (User)"
+                onClick={() => handleSelectRole('USER')}
+                className={`p-2.5 rounded-xl border text-left flex items-start gap-2 cursor-pointer transition-all ${
+                  targetRole === 'USER'
+                    ? 'border-amber-600 bg-amber-100/90 ring-2 ring-amber-500/30 shadow-xs'
+                    : 'border-amber-200/80 bg-amber-50/60 hover:bg-amber-100/70'
+                }`}
+                title="คลิกเพื่อเข้าสู่ระบบผู้ใช้งาน (User) - ต้องใส่รหัส PIN"
               >
-                <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs group-hover:bg-amber-600">
+                <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                   <Users className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-amber-950 flex items-center gap-1">
                     <span>ผู้ใช้งาน (User)</span>
                   </div>
-                  <div className="text-[10px] text-amber-700 font-medium">
-                    เข้าสู่ระบบด่วน
+                  <div className="text-[10px] text-amber-700 font-semibold flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" />
+                    <span>ต้องใส่รหัส</span>
                   </div>
                 </div>
               </button>
@@ -820,8 +890,16 @@ export default function App() {
 
           {/* Custom PIN Form with inline button */}
           <form onSubmit={handleLoginSubmit} className="space-y-2 pt-1 border-t border-slate-100">
-            <div className="flex items-center justify-between text-[10px] font-semibold text-slate-400">
-              <span>หรือ ป้อนรหัส PIN ด้วยตนเอง:</span>
+            <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500">
+              <span className="flex items-center gap-1">
+                {targetRole === 'ADMIN' ? (
+                  <span className="text-indigo-700 font-bold">ป้อนรหัส PIN ผู้ดูแลระบบ (Admin):</span>
+                ) : targetRole === 'USER' ? (
+                  <span className="text-amber-800 font-bold">ป้อนรหัส PIN ผู้ใช้งาน (User - ดูได้อย่างเดียว):</span>
+                ) : (
+                  <span>หรือ ป้อนรหัส PIN ด้วยตนเอง:</span>
+                )}
+              </span>
               <button
                 type="button"
                 onClick={() => setShowKeypad(!showKeypad)}
@@ -841,7 +919,13 @@ export default function App() {
                   maxLength={10}
                   value={pinInput}
                   onChange={e => setPinInput(e.target.value)}
-                  placeholder="ป้อนรหัส PIN 4 หลัก"
+                  placeholder={
+                    targetRole === 'ADMIN'
+                      ? 'ป้อนรหัส PIN ผู้ดูแลระบบ (Admin)'
+                      : targetRole === 'USER'
+                      ? 'ป้อนรหัส PIN ผู้ใช้งาน (User)'
+                      : 'ป้อนรหัส PIN 4 หลัก'
+                  }
                   className="w-full text-center tracking-widest text-base font-bold font-mono pl-3 pr-9 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 bg-slate-50/70 text-slate-800 placeholder:text-slate-400 placeholder:font-sans placeholder:tracking-normal placeholder:text-xs"
                 />
                 <button
