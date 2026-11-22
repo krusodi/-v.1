@@ -7,13 +7,15 @@ import {
   Student, 
   AttendanceStatus, 
   Assignment, 
-  SystemSettings 
+  SystemSettings,
+  TeachingSchedule
 } from './types';
 import ClassroomsTab from './components/ClassroomsTab';
 import StudentsTab from './components/StudentsTab';
 import AttendanceTab from './components/AttendanceTab';
 import GradingTab from './components/GradingTab';
 import ReportsTab from './components/ReportsTab';
+import ScheduleTab, { DEFAULT_SCHEDULE } from './components/ScheduleTab';
 import ManagementTab from './components/ManagementTab';
 
 import { 
@@ -58,7 +60,8 @@ import {
   Upload,
   ChevronDown,
   ChevronUp,
-  KeyRound
+  KeyRound,
+  CalendarDays
 } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'classroom_system_data';
@@ -79,6 +82,7 @@ const DEFAULT_DATA: AppData = {
   attendance: [],
   assignments: [],
   scores: [],
+  schedule: DEFAULT_SCHEDULE,
 };
 
 export default function App() {
@@ -96,7 +100,11 @@ export default function App() {
         return {
           ...DEFAULT_DATA,
           ...parsed,
-          settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) }
+          settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) },
+          schedule: {
+            times: { ...DEFAULT_SCHEDULE.times, ...(parsed.schedule?.times || {}) },
+            entries: parsed.schedule?.entries || [],
+          },
         };
       } catch (e) {
         return DEFAULT_DATA;
@@ -115,7 +123,7 @@ export default function App() {
   const pinInputRef = React.useRef<HTMLInputElement>(null);
 
   // Tab State
-  const [currentTab, setCurrentTab] = useState<'attendance' | 'grading' | 'reports' | 'classrooms' | 'students' | 'management'>('attendance');
+  const [currentTab, setCurrentTab] = useState<'attendance' | 'grading' | 'reports' | 'classrooms' | 'students' | 'schedule' | 'management'>('attendance');
 
   // Toasts Notification State
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -182,7 +190,11 @@ export default function App() {
             setData({
               ...DEFAULT_DATA,
               ...appData,
-              settings: { ...DEFAULT_DATA.settings, ...(appData.settings || {}) }
+              settings: { ...DEFAULT_DATA.settings, ...(appData.settings || {}) },
+              schedule: {
+                times: { ...DEFAULT_SCHEDULE.times, ...(appData.schedule?.times || {}) },
+                entries: appData.schedule?.entries || [],
+              },
             });
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appData));
             if (updatedAt) {
@@ -219,7 +231,11 @@ export default function App() {
           setData({
             ...DEFAULT_DATA,
             ...appData,
-            settings: { ...DEFAULT_DATA.settings, ...(appData.settings || {}) }
+            settings: { ...DEFAULT_DATA.settings, ...(appData.settings || {}) },
+            schedule: {
+              times: { ...DEFAULT_SCHEDULE.times, ...(appData.schedule?.times || {}) },
+              entries: appData.schedule?.entries || [],
+            },
           });
           localStorage.setItem(LOCAL_STORAGE_KEY, incomingDataStr);
 
@@ -331,8 +347,17 @@ export default function App() {
       const remote = await getSchoolDataFromFirestore(TARGET_FIREBASE_PROJECT);
       if (remote && remote.appData) {
         isRemoteUpdateRef.current = true;
-        setData(remote.appData);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(remote.appData));
+        const normalized: AppData = {
+          ...DEFAULT_DATA,
+          ...remote.appData,
+          settings: { ...DEFAULT_DATA.settings, ...(remote.appData.settings || {}) },
+          schedule: {
+            times: { ...DEFAULT_SCHEDULE.times, ...(remote.appData.schedule?.times || {}) },
+            entries: remote.appData.schedule?.entries || [],
+          },
+        };
+        setData(normalized);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized));
         const now = new Date();
         setLastSyncTime(now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
         addToast(`ดึงข้อมูลล่าสุดจาก Firebase (${TARGET_FIREBASE_PROJECT}) สำเร็จแล้ว!`, 'success');
@@ -481,8 +506,17 @@ export default function App() {
           const remoteSchool = await getSchoolDataFromFirestore(TARGET_FIREBASE_PROJECT);
           if (remoteSchool && remoteSchool.appData && remoteSchool.appData.classrooms) {
             isRemoteUpdateRef.current = true;
-            setData(remoteSchool.appData);
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(remoteSchool.appData));
+            const normalized: AppData = {
+              ...DEFAULT_DATA,
+              ...remoteSchool.appData,
+              settings: { ...DEFAULT_DATA.settings, ...(remoteSchool.appData.settings || {}) },
+              schedule: {
+                times: { ...DEFAULT_SCHEDULE.times, ...(remoteSchool.appData.schedule?.times || {}) },
+                entries: remoteSchool.appData.schedule?.entries || [],
+              },
+            };
+            setData(normalized);
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized));
             addToast(`เข้าสู่ระบบด้วย Gmail (${result.user.email}) สำเร็จ พร้อมโหลดข้อมูลจาก Firebase (${TARGET_FIREBASE_PROJECT}) เรียบร้อยแล้ว`, 'success');
             setTimeout(() => {
               isRemoteUpdateRef.current = false;
@@ -771,6 +805,14 @@ export default function App() {
       settings,
     });
     addToast('อัปเดตโครงสร้างระบบตั้งค่าเรียบร้อยแล้ว', 'success');
+  };
+
+  // Teaching schedule update handler
+  const handleUpdateSchedule = (schedule: TeachingSchedule) => {
+    updateData({
+      ...data,
+      schedule,
+    });
   };
 
   const handleImportData = (importedData: AppData) => {
@@ -1209,7 +1251,20 @@ export default function App() {
               นักเรียน
             </button>
 
-            {/* 6. จัดการข้อมูล */}
+            {/* 6. ตารางสอน */}
+            <button
+              onClick={() => setCurrentTab('schedule')}
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+                currentTab === 'schedule'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+              }`}
+            >
+              <CalendarDays className="w-4.5 h-4.5" />
+              ตารางสอน
+            </button>
+
+            {/* 7. จัดการข้อมูล */}
             {isAdmin && (
               <button
                 onClick={() => setCurrentTab('management')}
@@ -1282,6 +1337,15 @@ export default function App() {
         {currentTab === 'reports' && (
           <ReportsTab
             appData={data}
+            addToast={addToast}
+          />
+        )}
+
+        {currentTab === 'schedule' && (
+          <ScheduleTab
+            appData={data}
+            isAdmin={isAdmin}
+            onUpdateSchedule={handleUpdateSchedule}
             addToast={addToast}
           />
         )}

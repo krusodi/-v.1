@@ -37,7 +37,7 @@
         },
         "appData": {
           "type": "object",
-          "description": "JSON object containing classrooms, students, attendance, and grading details"
+          "description": "JSON object containing classrooms, students, attendance, grading details, and teaching schedule"
         }
       },
       "required": ["id", "updatedAt", "appData"]

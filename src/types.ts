@@ -56,6 +56,36 @@ export interface Toast {
 
 export type UserRole = 'ADMIN' | 'USER' | 'NONE';
 
+export type DayOfWeek = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI';
+export type PeriodNumber = 1 | 2 | 3 | 4 | 5 | 6;
+
+export interface SchedulePeriodTimes {
+  period1: string;
+  period2: string;
+  period3: string;
+  period4: string;
+  lunch: string;
+  period5: string;
+  period6: string;
+  lunchLabel?: string;
+}
+
+export interface ScheduleEntry {
+  day: DayOfWeek;
+  period: PeriodNumber;
+  classroomId?: string;
+  subjectName: string;
+  roomName?: string;
+  teacherName?: string;
+  subjectGroup?: string;
+  note?: string;
+}
+
+export interface TeachingSchedule {
+  times: SchedulePeriodTimes;
+  entries: ScheduleEntry[];
+}
+
 export interface AppData {
   settings: SystemSettings;
   classrooms: Classroom[];
@@ -63,4 +93,5 @@ export interface AppData {
   attendance: AttendanceRecord[];
   assignments: Assignment[];
   scores: ScoreRecord[];
+  schedule?: TeachingSchedule;
 }
