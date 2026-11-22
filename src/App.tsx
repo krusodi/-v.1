@@ -1183,99 +1183,106 @@ export default function App() {
       </header>
 
       {/* TABS SELECTOR (Hidden during Print) */}
-      <nav className="print:hidden bg-white/90 backdrop-blur-md border-b border-slate-200/50 sticky top-[70px] z-30 shadow-xs">
+      <nav className="print:hidden bg-white/95 backdrop-blur-md border-b border-slate-200/70 sticky top-16 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1 sm:space-x-2 overflow-x-auto py-2.5 scrollbar-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-2.5 scrollbar-none">
             {/* 1. เช็คชื่อ */}
             <button
+              type="button"
               onClick={() => setCurrentTab('attendance')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer ${
                 currentTab === 'attendance'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-200/70'
+                  : 'bg-emerald-50/50 text-emerald-700 border-emerald-200/60 hover:bg-emerald-100/80 hover:border-emerald-300'
               }`}
             >
-              <CheckSquare className="w-4.5 h-4.5" />
-              เช็คชื่อ
+              <CheckSquare className={`w-4 h-4 shrink-0 ${currentTab === 'attendance' ? 'text-white' : 'text-emerald-600'}`} />
+              <span>เช็คชื่อ</span>
             </button>
 
             {/* 2. คะแนน */}
             <button
+              type="button"
               onClick={() => setCurrentTab('grading')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer ${
                 currentTab === 'grading'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-200/70'
+                  : 'bg-amber-50/50 text-amber-800 border-amber-200/60 hover:bg-amber-100/80 hover:border-amber-300'
               }`}
             >
-              <Award className="w-4.5 h-4.5" />
-              คะแนน
+              <Award className={`w-4 h-4 shrink-0 ${currentTab === 'grading' ? 'text-white' : 'text-amber-600'}`} />
+              <span>คะแนน</span>
             </button>
 
             {/* 3. รายงาน */}
             <button
+              type="button"
               onClick={() => setCurrentTab('reports')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer ${
                 currentTab === 'reports'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+                  ? 'bg-sky-600 text-white border-sky-600 shadow-md shadow-sky-200/70'
+                  : 'bg-sky-50/50 text-sky-700 border-sky-200/60 hover:bg-sky-100/80 hover:border-sky-300'
               }`}
             >
-              <FileSpreadsheet className="w-4.5 h-4.5" />
-              รายงาน
+              <FileSpreadsheet className={`w-4 h-4 shrink-0 ${currentTab === 'reports' ? 'text-white' : 'text-sky-600'}`} />
+              <span>รายงาน</span>
             </button>
 
             {/* 4. ชั้นเรียน */}
             <button
+              type="button"
               onClick={() => setCurrentTab('classrooms')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer ${
                 currentTab === 'classrooms'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200/70'
+                  : 'bg-indigo-50/50 text-indigo-700 border-indigo-200/60 hover:bg-indigo-100/80 hover:border-indigo-300'
               }`}
             >
-              <BookOpen className="w-4.5 h-4.5" />
-              ชั้นเรียน
+              <BookOpen className={`w-4 h-4 shrink-0 ${currentTab === 'classrooms' ? 'text-white' : 'text-indigo-600'}`} />
+              <span>ชั้นเรียน</span>
             </button>
 
             {/* 5. นักเรียน */}
             <button
+              type="button"
               onClick={() => setCurrentTab('students')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer ${
                 currentTab === 'students'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+                  ? 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-200/70'
+                  : 'bg-violet-50/50 text-violet-700 border-violet-200/60 hover:bg-violet-100/80 hover:border-violet-300'
               }`}
             >
-              <Users className="w-4.5 h-4.5" />
-              นักเรียน
+              <Users className={`w-4 h-4 shrink-0 ${currentTab === 'students' ? 'text-white' : 'text-violet-600'}`} />
+              <span>นักเรียน</span>
             </button>
 
             {/* 6. ตารางสอน */}
             <button
+              type="button"
               onClick={() => setCurrentTab('schedule')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer ${
                 currentTab === 'schedule'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+                  ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-200/70'
+                  : 'bg-rose-50/50 text-rose-700 border-rose-200/60 hover:bg-rose-100/80 hover:border-rose-300'
               }`}
             >
-              <CalendarDays className="w-4.5 h-4.5" />
-              ตารางสอน
+              <CalendarDays className={`w-4 h-4 shrink-0 ${currentTab === 'schedule' ? 'text-white' : 'text-rose-600'}`} />
+              <span>ตารางสอน</span>
             </button>
 
             {/* 7. จัดการข้อมูล */}
             {isAdmin && (
               <button
+                type="button"
                 onClick={() => setCurrentTab('management')}
-                className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-250 cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer ${
                   currentTab === 'management'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 bg-slate-50/50'
+                    ? 'bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-200/70'
+                    : 'bg-teal-50/50 text-teal-700 border-teal-200/60 hover:bg-teal-100/80 hover:border-teal-300'
                 }`}
               >
-                <SettingsIcon className="w-4.5 h-4.5" />
-                จัดการข้อมูล
+                <SettingsIcon className={`w-4 h-4 shrink-0 ${currentTab === 'management' ? 'text-white' : 'text-teal-600'}`} />
+                <span>จัดการข้อมูล</span>
               </button>
             )}
           </div>
