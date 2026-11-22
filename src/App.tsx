@@ -1186,7 +1186,21 @@ export default function App() {
       <nav className="print:hidden bg-white/95 backdrop-blur-md border-b border-slate-200/70 sticky top-16 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-2.5 scrollbar-none">
-            {/* 1. เช็คชื่อ */}
+            {/* 1. ตารางสอน */}
+            <button
+              type="button"
+              onClick={() => setCurrentTab('schedule')}
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer ${
+                currentTab === 'schedule'
+                  ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-200/70'
+                  : 'bg-rose-50/50 text-rose-700 border-rose-200/60 hover:bg-rose-100/80 hover:border-rose-300'
+              }`}
+            >
+              <CalendarDays className={`w-4 h-4 shrink-0 ${currentTab === 'schedule' ? 'text-white' : 'text-rose-600'}`} />
+              <span>ตารางสอน</span>
+            </button>
+
+            {/* 2. เช็คชื่อ */}
             <button
               type="button"
               onClick={() => setCurrentTab('attendance')}
@@ -1200,7 +1214,7 @@ export default function App() {
               <span>เช็คชื่อ</span>
             </button>
 
-            {/* 2. คะแนน */}
+            {/* 3. คะแนน */}
             <button
               type="button"
               onClick={() => setCurrentTab('grading')}
@@ -1214,7 +1228,7 @@ export default function App() {
               <span>คะแนน</span>
             </button>
 
-            {/* 3. รายงาน */}
+            {/* 4. รายงาน */}
             <button
               type="button"
               onClick={() => setCurrentTab('reports')}
@@ -1228,7 +1242,7 @@ export default function App() {
               <span>รายงาน</span>
             </button>
 
-            {/* 4. ชั้นเรียน */}
+            {/* 5. ชั้นเรียน */}
             <button
               type="button"
               onClick={() => setCurrentTab('classrooms')}
@@ -1242,7 +1256,7 @@ export default function App() {
               <span>ชั้นเรียน</span>
             </button>
 
-            {/* 5. นักเรียน */}
+            {/* 6. นักเรียน */}
             <button
               type="button"
               onClick={() => setCurrentTab('students')}
@@ -1254,20 +1268,6 @@ export default function App() {
             >
               <Users className={`w-4 h-4 shrink-0 ${currentTab === 'students' ? 'text-white' : 'text-violet-600'}`} />
               <span>นักเรียน</span>
-            </button>
-
-            {/* 6. ตารางสอน */}
-            <button
-              type="button"
-              onClick={() => setCurrentTab('schedule')}
-              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer ${
-                currentTab === 'schedule'
-                  ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-200/70'
-                  : 'bg-rose-50/50 text-rose-700 border-rose-200/60 hover:bg-rose-100/80 hover:border-rose-300'
-              }`}
-            >
-              <CalendarDays className={`w-4 h-4 shrink-0 ${currentTab === 'schedule' ? 'text-white' : 'text-rose-600'}`} />
-              <span>ตารางสอน</span>
             </button>
 
             {/* 7. จัดการข้อมูล */}
